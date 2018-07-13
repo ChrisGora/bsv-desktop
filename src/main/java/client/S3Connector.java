@@ -28,7 +28,6 @@ class S3Connector {
     public void listBuckets() {
         for (Bucket bucket : s3.listBuckets()) {
             System.out.println("Found bucket: " + bucket.getName());
-
         }
     }
 
@@ -38,7 +37,7 @@ class S3Connector {
             PutObjectRequest request = new PutObjectRequest(upload.getBucket(), upload.getKey(), upload.getFile());
             request.setGeneralProgressListener((progressEvent) -> {
                 ProgressEventType type = progressEvent.getEventType();
-                upload.setMostRecentProgressEvent(type);
+                upload.setMostRecentProgressEvent(progressEvent);
                 if (type == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
                     System.out.println("TRANSFER COMPLETED");
                 }
