@@ -86,10 +86,10 @@ public class Main extends Application {
 
 
     private void addProgressBar(Stage primaryStage, UploadHolder uploadStatus) {
-//        ProgressBar progressBar = new ProgressBar();
-//        uploadStatus.setProgressListener(progressBar::setProgress);
+        ProgressBar progressBar = new ProgressBar();
+        uploadStatus.setProgressListener(progressBar::setProgress);
         uploadStatus.setProgressListener(System.out::println);
-//        rootGroup.getChildren().add(progressBar);
+        rootGroup.getChildren().add(progressBar);
     }
 
 }

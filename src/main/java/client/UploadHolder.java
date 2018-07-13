@@ -1,9 +1,5 @@
 package client;
 
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressEventType;
-import com.amazonaws.event.request.Progress;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +10,6 @@ public class UploadHolder {
     private File file;
     private long totalSize;
     private long uploadedSize;
-    private ProgressEvent mostRecentProgressEvent;
     private String key;
     private String bucket;
     private List<ProgressObserver> observers;
@@ -32,13 +27,8 @@ public class UploadHolder {
         this.totalSize = file.length();
     }
 
-    public ProgressEvent getMostRecentProgressEvent() {
-        return mostRecentProgressEvent;
-    }
-
-    public void setMostRecentProgressEvent(ProgressEvent mostRecentProgressEvent) {
-        this.mostRecentProgressEvent = mostRecentProgressEvent;
-        uploadedSize = uploadedSize + mostRecentProgressEvent.getBytesTransferred();
+    public void onBytesUploaded(long bytesJustUploaded) {
+        uploadedSize = uploadedSize + bytesJustUploaded;
         for(ProgressObserver observer : observers) {
             observer.onProgressChanged(getProgress());
         }
@@ -62,10 +52,9 @@ public class UploadHolder {
 
     public double getProgress() {
         double done = uploadedSize;
-        System.out.println("DONE: " + done);
-//        long all = mostRecentProgressEvent.getBytes();
+//        System.out.println("DONE: " + done);
         double all = totalSize;
-        System.out.println("ALL: " + all);
+//        System.out.println("ALL: " + all);
         double progress = done/all;
         System.out.println("PROGRESS: " + progress);
         return progress;
