@@ -31,6 +31,7 @@ public class Main extends Application {
         Button singleFileButton = new Button();
         singleFileButton.setText("Upload file");
         singleFileButton.setOnAction((event) -> {
+            fileChooser.setTitle("Upload file");
             File file = fileChooser.showOpenDialog(primaryStage);
             if (file != null) {
                 uploader.upload(file);
@@ -40,6 +41,7 @@ public class Main extends Application {
         Button multipleFilesButton = new Button();
         multipleFilesButton.setText("Upload multiple files");
         multipleFilesButton.setOnAction((event) -> {
+            fileChooser.setTitle("Upload multiple files");
             List<File> files = fileChooser.showOpenMultipleDialog(primaryStage);
             if (files != null) {
                 for (File file : files) {
