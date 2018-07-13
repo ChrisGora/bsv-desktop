@@ -34,7 +34,7 @@ public class Main extends Application {
             fileChooser.setTitle("Upload file");
             File file = fileChooser.showOpenDialog(primaryStage);
             if (file != null) {
-                uploader.upload(file);
+                UploadHolder uploadStatus = uploader.upload(file);
             }
         });
 
@@ -46,7 +46,7 @@ public class Main extends Application {
             if (files != null) {
                 for (File file : files) {
                     if (file != null) {
-                        uploader.upload(file);
+                        UploadHolder uploadStatus = uploader.upload(file);
                     }
                 }
             }

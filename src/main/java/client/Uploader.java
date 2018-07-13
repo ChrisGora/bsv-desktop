@@ -21,9 +21,10 @@ import java.util.UUID;
 public class Uploader {
     private S3Connector s3Connector;
     private RdsConnector rdsConnector;
+    private String bucket = "bristol-streetview-photos";
 
     Uploader() {
-        this.s3Connector = new S3Connector(Regions.EU_WEST_2, "bristol-streetview-photos");
+        this.s3Connector = new S3Connector(Regions.EU_WEST_2);
         this.rdsConnector = new RdsConnector();
     }
 
@@ -31,7 +32,7 @@ public class Uploader {
         s3Connector.listBuckets();
     }
 
-    public void upload(File file) {
+    public UploadHolder upload(File file) {
         String id = null;
         try {
             id = getImageId(file);
@@ -45,7 +46,14 @@ public class Uploader {
 
         String key = id + "-" + file.getName();
         System.out.println(key);
-        s3Connector.uploadFile(key, file);
+
+        UploadHolder upload = new UploadHolder();
+        upload.setFile(file);
+        upload.setKey(key);
+        upload.setBucket(bucket);
+        s3Connector.uploadFile(upload);
+
+        return upload;
     }
 
     public void download() {
@@ -62,6 +70,8 @@ public class Uploader {
 //                System.out.println("readImageMetadata: " + directory.getName() + " " + tag.getTagName() + " " + tag.getDescription());
                 if (tag.getTagType() == ExifDirectoryBase.TAG_IMAGE_UNIQUE_ID) {
                     System.out.println("HERE!!!!!");
+                    id = tag.getDescription();
+                    System.out.println(id);
                 }
             }
 
