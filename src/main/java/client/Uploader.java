@@ -2,6 +2,8 @@ package client;
 
 import com.amazonaws.regions.Regions;
 
+import java.io.File;
+
 public class Uploader {
     private S3Connector s3Connector;
     private RdsConnector rdsConnector;
@@ -15,4 +17,13 @@ public class Uploader {
         s3Connector.listBuckets();
     }
 
+    public void upload(File file) {
+        String key = file.getName();
+        System.out.println(key);
+//        s3Connector.uploadFile(key, file);
+    }
+
+    public void download() {
+
+    }
 }
