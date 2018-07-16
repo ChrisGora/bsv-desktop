@@ -1,9 +1,6 @@
 package client;
 
 import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPIterator;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.properties.XMPPropertyInfo;
 import com.amazonaws.regions.Regions;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
@@ -11,26 +8,26 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifDirectoryBase;
-import com.drew.metadata.xmp.XmpDirectory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Uploader {
-    private S3Connector s3Connector;
+//    private S3Connection s3Connection;
     private RdsConnector rdsConnector;
     private String bucket = "bristol-streetview-photos";
 
     Uploader() {
-        this.s3Connector = new S3Connector(Regions.EU_WEST_2);
+//        this.s3Connection = new S3Connection(Regions.EU_WEST_2);
         this.rdsConnector = new RdsConnector();
     }
 
-    public void test() {
-        s3Connector.listBuckets();
-    }
+//    public void test() {
+//        s3Connection.listBuckets();
+//    }
 
     public UploadHolder upload(File file) {
         String id = null;
@@ -51,7 +48,20 @@ public class Uploader {
         upload.setFile(file);
         upload.setKey(key);
         upload.setBucket(bucket);
-        s3Connector.uploadFile(upload);
+
+//        s3Connection.uploadFile(upload);
+
+        S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
+
+        System.out.println("HERE 1");
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        System.out.println("HERE 2");
+
+        executor.submit(s3Connection);
+
+        System.out.println("HERE 3");
 
         return upload;
     }

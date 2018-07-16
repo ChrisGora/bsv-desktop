@@ -6,6 +6,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import javafx.application.Platform;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 
@@ -20,50 +21,71 @@ import java.util.concurrent.Executors;
 // The new class will extend Task
 // https://stackoverflow.com/questions/35749456/javafx-supply-arguments-to-task
 
-class S3Connector extends Service<UploadHolder>{
+class S3Connection extends Task<UploadHolder>{
 
     private AmazonS3 s3;
-    private ExecutorService executor;
+    private UploadHolder upload;
 
-    S3Connector(Regions region) {
+    S3Connection(Regions region, UploadHolder upload) {
 //        AWSCredentialsProvider awsCredentialsProvider = new AWSCredentialsProviderChain();
 //        awsCredentialsProvider.getCredentials();
         this.s3 = AmazonS3ClientBuilder.standard()
                 .withRegion(region)
                 .build();
 
-        executor = Executors.newFixedThreadPool(4);
+        this.upload = upload;
+
     }
 
-    public void listBuckets() {
-        for (Bucket bucket : s3.listBuckets()) {
-            System.out.println("Found bucket: " + bucket.getName());
-        }
-    }
+//    public void listBuckets() {
+//        for (Bucket bucket : s3.listBuckets()) {
+//            System.out.println("Found bucket: " + bucket.getName());
+//        }
+//    }
 
     @Override
-    protected Task<UploadHolder> createTask() {
-        return null;
+    protected UploadHolder call() throws Exception {
+        uploadFile();
+//        updateProgress();
+        return upload;
     }
 
     // Needs to upload a photo and return some sort of reference (a url?)
-    public void uploadFile(UploadHolder upload) {
-        executor.submit(() -> {
+    public void uploadFile() {
+        System.out.println("Upload file method beginning thread: " + Thread.currentThread().getName());
             PutObjectRequest request = new PutObjectRequest(upload.getBucket(), upload.getKey(), upload.getFile());
             request.setGeneralProgressListener((progressEvent) -> {
-                ProgressEventType type = progressEvent.getEventType();
-                upload.onBytesUploaded(progressEvent.getBytesTransferred());
-                if (type == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
-                    System.out.println("TRANSFER COMPLETED");
-                }
+
+                ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(upload, progressEvent.getBytesTransferred());
+                Platform.runLater(notifier);
+
+//                System.out.println("Progresslistener thread: " + Thread.currentThread().getName());
+//                ProgressEventType type = progressEvent.getEventType();
+//                upload.onBytesUploaded(progressEvent.getBytesTransferred());
+//                if (type == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
+//                    System.out.println("TRANSFER COMPLETED");
+//                }
             });
+
+//            request.setGeneralProgressListener((progressEvent) -> {
+//                onUpdate(progressEvent.getBytesTransferred());
+//            });
+
             s3.putObject(request);
-        });
+        System.out.println("Upload file method end thread: " + Thread.currentThread().getName());
+
+//        });
 //        System.out.println(result);
 //        return "";
     }
 
-    /*public Task createFileUploadTast(UploadHolder uploadHolder) {
+//    private void onUpdate(long bytes) {
+//        ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(upload, bytes);
+//        ExecutorService executorService = Executors.newSingleThreadExecutor();
+//        executorService.submit(notifier);
+//    }
+
+ /*public Task createFileUploadTast(UploadHolder uploadHolder) {
         return new Task(uploadHolder) {
 //            private final UploadHolder upload = uploadHolder;
             @Override
