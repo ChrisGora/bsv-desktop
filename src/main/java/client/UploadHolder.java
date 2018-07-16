@@ -12,10 +12,12 @@ public class UploadHolder {
     private long uploadedSize;
     private String key;
     private String bucket;
-    private List<ProgressObserver> observers;
+    private List<ProgressObserver> progressObservers;
+    private List<CompletionObserver> completionObservers;
 
     UploadHolder() {
-        this.observers = new ArrayList<>();
+        this.progressObservers = new ArrayList<>();
+        this.completionObservers = new ArrayList<>();
     }
 
     public File getFile() {
@@ -29,9 +31,20 @@ public class UploadHolder {
 
     public void onBytesUploaded(long bytesJustUploaded) {
         uploadedSize = uploadedSize + bytesJustUploaded;
-        for(ProgressObserver observer : observers) {
-            observer.onProgressChanged(getProgress());
+        double progress = getProgress();
+        for(ProgressObserver observer : progressObservers) {
+            if (observer != null ) {
+                observer.onProgressChanged(progress);
+            }
         }
+
+        if (progress == 1) {
+            for (CompletionObserver observer : completionObservers) {
+                System.out.println("DONE!");
+                observer.onDone();
+            }
+        }
+
     }
 
     public String getKey() {
@@ -50,19 +63,21 @@ public class UploadHolder {
         this.bucket = bucket;
     }
 
-    public double getProgress() {
+    private double getProgress() {
         double done = uploadedSize;
-//        System.out.println("DONE: " + done);
         double all = totalSize;
-//        System.out.println("ALL: " + all);
-        double progress = done/all;
-        System.out.println("PROGRESS: " + progress);
-        return progress;
+        return done/all;
     }
 
     public void setProgressListener(ProgressObserver observer) {
-        if (observers.contains(observer))
+        if (progressObservers.contains(observer))
             throw new IllegalArgumentException("The observer to be registered has already been registered");
-        else observers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+        else progressObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+    }
+
+    public void setCompletionListener(CompletionObserver observer) {
+        if (completionObservers.contains(observer))
+            throw new IllegalArgumentException("The observer to be registered has already been registered");
+        else completionObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
     }
 }

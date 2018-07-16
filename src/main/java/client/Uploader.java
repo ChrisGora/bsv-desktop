@@ -17,12 +17,12 @@ import java.util.concurrent.Executors;
 
 public class Uploader {
 //    private S3Connection s3Connection;
-    private RdsConnector rdsConnector;
+    private RdsConnection rdsConnection;
     private String bucket = "bristol-streetview-photos";
 
     Uploader() {
 //        this.s3Connection = new S3Connection(Regions.EU_WEST_2);
-        this.rdsConnector = new RdsConnector();
+        this.rdsConnection = new RdsConnection();
     }
 
 //    public void test() {
@@ -52,17 +52,8 @@ public class Uploader {
 //        s3Connection.uploadFile(upload);
 
         S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
-
-        System.out.println("HERE 1");
-
         ExecutorService executor = Executors.newSingleThreadExecutor();
-
-        System.out.println("HERE 2");
-
         executor.submit(s3Connection);
-
-        System.out.println("HERE 3");
-
         return upload;
     }
 
