@@ -21,7 +21,8 @@ class S3Connection extends Task<Void> {
     private UploadHolder upload;
 
     S3Connection(Regions region, UploadHolder upload) {
-        this.s3 = AmazonS3ClientBuilder.standard()
+        this.s3 = AmazonS3ClientBuilder
+                .standard()
                 .withRegion(region)
                 .build();
 
