@@ -2,12 +2,7 @@ package client;
 
 import com.adobe.xmp.XMPException;
 import com.amazonaws.regions.Regions;
-import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
-import com.drew.metadata.Directory;
-import com.drew.metadata.Metadata;
-import com.drew.metadata.Tag;
-import com.drew.metadata.exif.ExifDirectoryBase;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,13 +11,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Uploader {
-//    private S3Connection s3Connection;
-    private RdsConnection rdsConnection;
+
     private String bucket = "bristol-streetview-photos";
 
     Uploader() {
-//        this.s3Connection = new S3Connection(Regions.EU_WEST_2);
-//        this.rdsConnection = new RdsConnection();
     }
 
 //    public void test() {
@@ -31,13 +23,17 @@ public class Uploader {
 
     public UploadHolder upload(File file) {
         String id = null;
+
         try {
-            id = getImageId(file);
+            ImageMetadata metadata = new ImageMetadata(file);
+            id = metadata.getId();
+            metadata.printMetadata();
         } catch (ImageProcessingException | IOException | XMPException e) {
-//            e.printStackTrace();
+            e.printStackTrace();
         }
 
         if (id == null) {
+            System.out.println("Image ID was null");
             id = UUID.randomUUID().toString().replace("-", "");
         }
 
@@ -49,11 +45,9 @@ public class Uploader {
         upload.setKey(key);
         upload.setBucket(bucket);
 
-//        s3Connection.uploadFile(upload);
-
-        S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(s3Connection);
+//        S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        executor.submit(s3Connection);
 
         upload.setCompletionListener(this::updateDatabase);
 
@@ -68,41 +62,6 @@ public class Uploader {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private String getImageId(File file) throws ImageProcessingException, IOException, XMPException {
-        Metadata metadata = ImageMetadataReader.readMetadata(file);
-
-        String id = null;
-
-        for (Directory directory : metadata.getDirectories()) {
-            for (Tag tag : directory.getTags()) {
-//                System.out.println("readImageMetadata: " + directory.getName() + " " + tag.getTagName() + " " + tag.getDescription());
-                if (tag.getTagType() == ExifDirectoryBase.TAG_IMAGE_UNIQUE_ID) {
-//                    System.out.println("HERE!!!!!");
-                    id = tag.getDescription();
-//                    System.out.println(id);
-                }
-            }
-
-            if (directory.hasErrors()) {
-                for (String error : directory.getErrors()) {
-                    System.out.println("readImageMetadata: Metadata error: " + error);
-                }
-            }
-//            if (directory.getName().equals("XMP")) {
-//                System.out.println("readImageMetadata: XMP DETECTED");
-//                XmpDirectory xmpDirectory = (XmpDirectory) directory;
-//                XMPMeta xmpMeta = xmpDirectory.getXMPMeta();
-//                XMPIterator iterator = xmpMeta.iterator();
-//                while (iterator.hasNext()) {
-//                    XMPPropertyInfo info = (XMPPropertyInfo) iterator.next();
-//                    Objects.requireNonNull(info);
-//                    System.out.println("readImageMetadata: XMP: " + info.getPath() + " " + info.getValue());
-//                }
-//            }
-        }
-        return id;
     }
 
 }

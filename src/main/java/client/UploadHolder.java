@@ -46,7 +46,6 @@ public class UploadHolder {
                 }
             }
         }
-
     }
 
     public String getKey() {
