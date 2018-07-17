@@ -26,9 +26,7 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -44,80 +42,44 @@ class RdsConnection {
     private static final String HOSTNAME = "rds-mysql-uob-bristolstreetview.crvuxxvm3uvv.eu-west-2.rds.amazonaws.com";
     private static final int PORT = 3306;
     private static final String JDBC_URL = "jdbc:mysql://" + HOSTNAME + ":" + PORT;
-    private static final String USERNAME = "kg17815";
+    private static final String USERNAME = "java-db-client";
+    private static final String PASSWORD = "y2W06^*R^P4Xdtql"; // FIXME: 17/07/18 Password as plaintext!
 
     private static final String KEY_STORE_TYPE = "JKS";
     private static final String KEY_STORE_PROVIDER = "SUN";
     private static final String KEY_STORE_FILE_PREFIX = "sys-connect-via-ssl-test-cacerts";
     private static final String KEY_STORE_FILE_SUFFIX = ".jks";
-    private static final String DEFAULT_KEY_STORE_PASSWORD = "some_more-clever-p@ssworrrrrd";
-//    private static final String DEFAULT_KEY_STORE_PASSWORD = "changeit";
+    private static final String DEFAULT_KEY_STORE_PASSWORD = "changeit";
 
     private static final String SSL_CERTIFICATE = "rds-ca-2015-eu-west-2.pem";
 
-    private AmazonRDS rds;
-    private DBInstance db;
-
-    private String authToken;
+    private Connection connection;
 
     public RdsConnection() {
 
-//        this.rds = AmazonRDSClientBuilder
-//                .standard()
-//                .withRegion(REGION)
-//                .build();
-//
-//        DescribeDBInstancesRequest request = new DescribeDBInstancesRequest();
-//        DescribeDBInstancesResult result = rds.describeDBInstances(request);
-//        List<DBInstance> list = result.getDBInstances();
-//        System.out.println("list length = " + list);
-//
-//        for (DBInstance db : list) {
-//            if (db.getDBInstanceIdentifier().equals("rds-mysql-uob-bristolstreetview")) {
-//                System.out.println("YASSSSS");
-//                this.db = db;
-//                break;
-//            }
-//        }
-//
-//        Objects.requireNonNull(this.db, "Database not found");
-
-        this.authToken = newAuthToken();
-        System.out.println(authToken);
-
         try {
-            newConnection();
+            this.connection = newConnection();
         } catch (SQLException | IOException | CertificateException e) {
             e.printStackTrace();
         }
 
+        testConnection();
+        closeConnection();
     }
 
-    @VisibleForTesting
-    String getAuthToken() {
-        return authToken;
-    }
-
-
-    private String newAuthToken() {
-        RdsIamAuthTokenGenerator generator = RdsIamAuthTokenGenerator
-                .builder()
-                .credentials(new DefaultAWSCredentialsProviderChain())
-                .region(Region.getRegion(REGION))
-                .build();
-
-        System.out.println(Region.getRegion(REGION));
-
-        String authToken = generator.getAuthToken(
-                GetIamAuthTokenRequest
-                        .builder()
-                        .hostname(HOSTNAME)
-                        .port(PORT)
-                        .userName(USERNAME)
-                        .build()
-        );
-
-        return authToken;
+    private void testConnection() {
+        try (Statement statement = connection.createStatement()) {
+            ResultSet set = statement.executeQuery("SELECT 'Success!' FROM DUAL;");
+            while (set.next()) {
+                String output = set.getString(1);
+                System.out.println("DB says: " + output);
+                if (!output.equals("Success!")) {
+                    throw new SQLWarning("Database Success Message not received");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private Connection newConnection() throws SQLException, IOException, CertificateException {
@@ -129,19 +91,29 @@ class RdsConnection {
         }
 
 
-        System.out.println("HERERE");
+        System.out.println("HERE 2");
         Properties info = newMySqlProperties();
-        return DriverManager.getConnection(JDBC_URL, info);
-//        return null;
+        Connection c = DriverManager.getConnection(JDBC_URL, info);
+        c.setAutoCommit(false);
+        return c;
+    }
+
+    public void closeConnection() {
+        try {
+            this.connection.close();
+            System.out.println("DB Connection closed");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private Properties newMySqlProperties() {
         Properties mysqlProperties = new Properties();
 
         mysqlProperties.setProperty("verifyServerCertificate","true");
-        mysqlProperties.setProperty("useSSL", "true");
+        mysqlProperties.setProperty("useSSL", "false");
         mysqlProperties.setProperty("user", USERNAME);
-        mysqlProperties.setProperty("password", authToken);
+        mysqlProperties.setProperty("password", PASSWORD);
 
         return mysqlProperties;
     }
@@ -151,6 +123,12 @@ class RdsConnection {
         System.setProperty("javax.net.ssl.trustStoreType", KEY_STORE_TYPE);
         System.setProperty("javax.net.ssl.trustStorePassword", DEFAULT_KEY_STORE_PASSWORD);
     }
+
+
+
+
+
+    //------------------------------------------------------------------------------------------------------------------
 
     private File newKeyStoreFile() throws IOException, CertificateException {
         return newKeyStoreFile(newCertificate());

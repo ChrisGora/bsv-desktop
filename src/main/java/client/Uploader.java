@@ -22,7 +22,7 @@ public class Uploader {
 
     Uploader() {
 //        this.s3Connection = new S3Connection(Regions.EU_WEST_2);
-        this.rdsConnection = new RdsConnection();
+//        this.rdsConnection = new RdsConnection();
     }
 
 //    public void test() {
