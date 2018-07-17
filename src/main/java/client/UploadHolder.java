@@ -30,18 +30,20 @@ public class UploadHolder {
     }
 
     public void onBytesUploaded(long bytesJustUploaded) {
-        uploadedSize = uploadedSize + bytesJustUploaded;
-        double progress = getProgress();
-        for(ProgressObserver observer : progressObservers) {
-            if (observer != null ) {
-                observer.onProgressChanged(progress);
+        if (bytesJustUploaded != 0) {
+            uploadedSize = uploadedSize + bytesJustUploaded;
+            double progress = getProgress();
+            for(ProgressObserver observer : progressObservers) {
+                if (observer != null ) {
+                    observer.onProgressChanged(progress);
+                }
             }
-        }
 
-        if (progress == 1) {
-            for (CompletionObserver observer : completionObservers) {
-                System.out.println("DONE!");
-                observer.onDone();
+            if (progress == 1) {
+                for (CompletionObserver observer : completionObservers) {
+                    System.out.println("Completion observer called");
+                    observer.onDone(this);
+                }
             }
         }
 

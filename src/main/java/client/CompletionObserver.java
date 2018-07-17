@@ -2,6 +2,6 @@ package client;
 
 public interface CompletionObserver {
 
-    void onDone();
+    void onDone(UploadHolder uploadHolder);
 
 }

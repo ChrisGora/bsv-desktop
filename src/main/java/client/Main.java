@@ -89,7 +89,7 @@ public class Main extends Application {
         ProgressBar progressBar = new ProgressBar();
         uploadStatus.setProgressListener(progressBar::setProgress);
         rootGroup.getChildren().add(progressBar);
-        uploadStatus.setCompletionListener(() -> rootGroup.getChildren().remove(progressBar));
+        uploadStatus.setCompletionListener((upload) -> rootGroup.getChildren().remove(progressBar));
     }
 
 }

@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyStore;
@@ -31,7 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
-class RdsConnection {
+class RdsConnection implements AutoCloseable {
 
     private static final DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
     private static final String AWS_ACCESS_KEY = creds.getCredentials().getAWSAccessKeyId();
@@ -100,7 +101,8 @@ class RdsConnection {
         return c;
     }
 
-    public void closeConnection() {
+    @Override
+    public void close() throws Exception {
         try {
             this.connection.close();
             System.out.println("DB Connection closed");
@@ -123,38 +125,45 @@ class RdsConnection {
     public int insertPhotoRow(String id,
                        int height,
                        int width,
-                       Date date,
+                       Timestamp timestamp,
                        Double latitude,
                        Double longitude,
                        String cameraSerialNumber,
                        int routeId) {
 
-        String sql = "INSERT INTO Photo (id, height, width, date, latitude, longitude, cameraSerialNumber, routeId)" +
-                "VALUES (" +
-                id + "," +
-                height + "," +
-                width + "," +
-                null + "," +
-                latitude + "," +
-                longitude + "," +
-                cameraSerialNumber + "," +
-                routeId + ")";
+        String sql = "INSERT INTO Photo " +
+                "(id, height, width, timestamp, latitude, longitude, cameraSerialNumber, routeId) " +
+                "VALUES " +
+                "(?,?,?,?,?,?,?,?)";
 
-        return executeSqlUpdate(sql);
-    }
-
-    private int executeSqlUpdate(String sql) {
         int n = -1;
 
-        try (Statement statement = connection.createStatement()) {
-            n = statement.executeUpdate(sql);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, id);
+            statement.setInt(2, height);
+            statement.setInt(3, width);
+            statement.setTimestamp(4, timestamp);
+            statement.setBigDecimal(5, new BigDecimal(latitude));
+            statement.setBigDecimal(6, new BigDecimal(longitude));
+            statement.setString(7, cameraSerialNumber);
+            statement.setInt(8, routeId);
+
+            n = statement.executeUpdate();
             System.out.println("INSERT RESULT: " + n);
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return  n;
+
+
     }
+
+//    private int executeSqlUpdate(String sql) {
+//
+//    }
 
 
     //------------------------------------------------------------------------------------------------------------------

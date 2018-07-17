@@ -54,11 +54,20 @@ public class Uploader {
         S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(s3Connection);
+
+        upload.setCompletionListener(this::updateDatabase);
+
         return upload;
     }
 
-    public void download() {
-
+    private void updateDatabase(UploadHolder upload) {
+        try (RdsConnection rds = new RdsConnection()) {
+            System.out.println("Uploader established an RDS connection");
+            System.out.println(upload.getBucket());
+            System.out.println(upload.getKey());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private String getImageId(File file) throws ImageProcessingException, IOException, XMPException {
@@ -70,9 +79,9 @@ public class Uploader {
             for (Tag tag : directory.getTags()) {
 //                System.out.println("readImageMetadata: " + directory.getName() + " " + tag.getTagName() + " " + tag.getDescription());
                 if (tag.getTagType() == ExifDirectoryBase.TAG_IMAGE_UNIQUE_ID) {
-                    System.out.println("HERE!!!!!");
+//                    System.out.println("HERE!!!!!");
                     id = tag.getDescription();
-                    System.out.println(id);
+//                    System.out.println(id);
                 }
             }
 
@@ -81,7 +90,6 @@ public class Uploader {
                     System.out.println("readImageMetadata: Metadata error: " + error);
                 }
             }
-
 //            if (directory.getName().equals("XMP")) {
 //                System.out.println("readImageMetadata: XMP DETECTED");
 //                XmpDirectory xmpDirectory = (XmpDirectory) directory;
@@ -94,7 +102,6 @@ public class Uploader {
 //                }
 //            }
         }
-
         return id;
     }
 

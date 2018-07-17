@@ -7,14 +7,6 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
-// TODO: 13/07/18 Refactor into S3Connection
-// Single connection rather than a connection manager. (A non anonymous subclass of Task with a constructor parameter)
-// Create a new instance for each file
-// Prevents a mess with threading
-// Each instance has an associated UploadHolder
-// The new class will extend Task
-// https://stackoverflow.com/questions/35749456/javafx-supply-arguments-to-task
-
 class S3Connection extends Task<Void> {
 
     private AmazonS3 s3;
