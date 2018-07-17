@@ -41,7 +41,7 @@ class RdsConnection {
     private static final Regions REGION = Regions.EU_WEST_2;
     private static final String HOSTNAME = "rds-mysql-uob-bristolstreetview.crvuxxvm3uvv.eu-west-2.rds.amazonaws.com";
     private static final int PORT = 3306;
-    private static final String JDBC_URL = "jdbc:mysql://" + HOSTNAME + ":" + PORT;
+    private static final String JDBC_URL = "jdbc:mysql://" + HOSTNAME + ":" + PORT + "/bristolstreetviewdb";
     private static final String USERNAME = "java-db-client";
     private static final String PASSWORD = "y2W06^*R^P4Xdtql"; // FIXME: 17/07/18 Password as plaintext!
 
@@ -64,12 +64,14 @@ class RdsConnection {
         }
 
         testConnection();
-        closeConnection();
+//        closeConnection();
     }
 
+
     private void testConnection() {
-        try (Statement statement = connection.createStatement()) {
-            ResultSet set = statement.executeQuery("SELECT 'Success!' FROM DUAL;");
+        String sql = "SELECT 'Success!' FROM DUAL;";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            ResultSet set = statement.executeQuery();
             while (set.next()) {
                 String output = set.getString(1);
                 System.out.println("DB says: " + output);
@@ -94,7 +96,7 @@ class RdsConnection {
         System.out.println("HERE 2");
         Properties info = newMySqlProperties();
         Connection c = DriverManager.getConnection(JDBC_URL, info);
-        c.setAutoCommit(false);
+//        c.setAutoCommit(false);
         return c;
     }
 
@@ -118,17 +120,50 @@ class RdsConnection {
         return mysqlProperties;
     }
 
+    public int insertPhotoRow(String id,
+                       int height,
+                       int width,
+                       Date date,
+                       Double latitude,
+                       Double longitude,
+                       String cameraSerialNumber,
+                       int routeId) {
+
+        String sql = "INSERT INTO Photo (id, height, width, date, latitude, longitude, cameraSerialNumber, routeId)" +
+                "VALUES (" +
+                id + "," +
+                height + "," +
+                width + "," +
+                null + "," +
+                latitude + "," +
+                longitude + "," +
+                cameraSerialNumber + "," +
+                routeId + ")";
+
+        return executeSqlUpdate(sql);
+    }
+
+    private int executeSqlUpdate(String sql) {
+        int n = -1;
+
+        try (Statement statement = connection.createStatement()) {
+            n = statement.executeUpdate(sql);
+            System.out.println("INSERT RESULT: " + n);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return  n;
+    }
+
+
+    //------------------------------------------------------------------------------------------------------------------
+
     private void setSslProperties() throws IOException, CertificateException {
         System.setProperty("javax.net.ssl.trustStore", newKeyStoreFile().getPath());
         System.setProperty("javax.net.ssl.trustStoreType", KEY_STORE_TYPE);
         System.setProperty("javax.net.ssl.trustStorePassword", DEFAULT_KEY_STORE_PASSWORD);
     }
-
-
-
-
-
-    //------------------------------------------------------------------------------------------------------------------
 
     private File newKeyStoreFile() throws IOException, CertificateException {
         return newKeyStoreFile(newCertificate());
