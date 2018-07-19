@@ -8,6 +8,7 @@ import java.util.Objects;
 public class UploadHolder {
 
     private File file;
+    private ImageMetadata metadata;
     private long totalSize;
     private long uploadedSize;
     private String key;
@@ -27,6 +28,14 @@ public class UploadHolder {
     public void setFile(File file) {
         this.file = file;
         this.totalSize = file.length();
+    }
+
+    public ImageMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(ImageMetadata metadata) {
+        this.metadata = metadata;
     }
 
     public void onBytesUploaded(long bytesJustUploaded) {

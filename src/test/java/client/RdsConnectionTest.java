@@ -18,10 +18,13 @@ public class RdsConnectionTest {
                     1000,
                     1000,
                     new Timestamp(new java.util.Date().getTime()),
+                    new Timestamp(new java.util.Date().getTime()),
                     123.34455,
                     4555.5600054,
                     "12345567",
-                    12
+                    12,
+                    "test-bucket",
+                    "test-key"
             );
         } catch (Exception e) {
             e.printStackTrace();

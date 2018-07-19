@@ -125,16 +125,20 @@ class RdsConnection implements AutoCloseable {
     public int insertPhotoRow(String id,
                        int height,
                        int width,
-                       Timestamp timestamp,
+                       Timestamp PhotoTimestamp,
+                       Timestamp UploadTimeStamp,
                        Double latitude,
                        Double longitude,
                        String cameraSerialNumber,
-                       int routeId) {
+                       int routeId,
+                       String s3BucketName,
+                       String s3Key
+    ) {
 
         String sql = "INSERT INTO Photo " +
-                "(id, height, width, timestamp, latitude, longitude, cameraSerialNumber, routeId) " +
+                "(id, height, width, photoTimestamp, uploadTimestamp, latitude, longitude, cameraSerialNumber, routeId, s3BucketName, s3Key) " +
                 "VALUES " +
-                "(?,?,?,?,?,?,?,?)";
+                "(?,?,?,?,?,?,?,?,?,?,?)";
 
         int n = -1;
 
@@ -143,11 +147,14 @@ class RdsConnection implements AutoCloseable {
             statement.setString(1, id);
             statement.setInt(2, height);
             statement.setInt(3, width);
-            statement.setTimestamp(4, timestamp);
-            statement.setBigDecimal(5, new BigDecimal(latitude));
-            statement.setBigDecimal(6, new BigDecimal(longitude));
-            statement.setString(7, cameraSerialNumber);
-            statement.setInt(8, routeId);
+            statement.setTimestamp(4, PhotoTimestamp);
+            statement.setTimestamp(5, UploadTimeStamp);
+            statement.setBigDecimal(6, new BigDecimal(latitude));
+            statement.setBigDecimal(7, new BigDecimal(longitude));
+            statement.setString(8, cameraSerialNumber);
+            statement.setInt(9, routeId);
+            statement.setString(10, s3BucketName);
+            statement.setString(11, s3Key);
 
             n = statement.executeUpdate();
             System.out.println("INSERT RESULT: " + n);

@@ -1,6 +1,7 @@
 package client;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -87,9 +88,19 @@ public class Main extends Application {
 
     private void addProgressBar(Stage primaryStage, UploadHolder uploadStatus) {
         ProgressBar progressBar = new ProgressBar();
-        uploadStatus.setProgressListener(progressBar::setProgress);
+        uploadStatus.setProgressListener((progress) -> {
+            Platform.runLater(() -> {
+                progressBar.setProgress(progress);
+            });
+        });
+
+        uploadStatus.setCompletionListener((upload) -> {
+            Platform.runLater(() -> {
+                rootGroup.getChildren().remove(progressBar);
+            });
+        });
+
         rootGroup.getChildren().add(progressBar);
-        uploadStatus.setCompletionListener((upload) -> rootGroup.getChildren().remove(progressBar));
     }
 
 }

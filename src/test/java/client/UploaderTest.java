@@ -16,7 +16,32 @@ public class UploaderTest {
         Uploader uploader = new Uploader();
         UploadHolder upload = uploader.upload(file);
         upload.setProgressListener(this::onProgressUpdated);
+
+        CompletionObserver completionObserver = new CompletionObserver() {
+            @Override
+            public void onDone(UploadHolder uploadHolder) {
+                synchronized (this) {
+                    onCompleted(uploadHolder);
+                    notifyAll();
+                }
+            }
+        };
+
         upload.setCompletionListener(this::onCompleted);
+
+        synchronized (completionObserver) {
+            try {
+                completionObserver.wait(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+//        try {
+//            Thread.sleep(100000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     private void onProgressUpdated(double progress) {
@@ -24,6 +49,7 @@ public class UploaderTest {
     }
 
     private void onCompleted(UploadHolder uploadHolder) {
+//        synchronized ()
         System.out.println("DONE: " + uploadHolder.getKey());
     }
 

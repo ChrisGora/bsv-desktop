@@ -30,11 +30,14 @@ class S3Connection extends Task<Void> {
     // Needs to upload a photo and return some sort of reference (a url?)
     private void uploadFile() {
         System.out.println("Upload file method beginning thread: " + Thread.currentThread().getName());
+        System.out.println("request created");
             PutObjectRequest request = new PutObjectRequest(upload.getBucket(), upload.getKey(), upload.getFile());
             request.setGeneralProgressListener((progressEvent) -> {
 
-                ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(upload, progressEvent.getBytesTransferred());
-                Platform.runLater(notifier);
+//                ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(upload, progressEvent.getBytesTransferred());
+//                Platform.runLater(notifier);
+
+                upload.onBytesUploaded(progressEvent.getBytesTransferred());
 
                 // FIXME: 16/07/18 Am I creating a million executors ?? - run with visual VM
             });
