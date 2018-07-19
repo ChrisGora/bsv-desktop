@@ -24,13 +24,8 @@ public class Uploader {
     public UploadHolder upload(File file) {
         String id = null;
 
-        try {
-            ImageMetadata metadata = new ImageMetadata(file);
-            id = metadata.getId();
-            metadata.printMetadata();
-        } catch (ImageProcessingException | IOException | XMPException e) {
-            e.printStackTrace();
-        }
+        ImageMetadata metadata = new ImageMetadata(file);
+        id = metadata.getId();
 
         if (id == null) {
             System.out.println("Image ID was null");
@@ -45,9 +40,9 @@ public class Uploader {
         upload.setKey(key);
         upload.setBucket(bucket);
 
-//        S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
-//        ExecutorService executor = Executors.newSingleThreadExecutor();
-//        executor.submit(s3Connection);
+        S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(s3Connection);
 
         upload.setCompletionListener(this::updateDatabase);
 

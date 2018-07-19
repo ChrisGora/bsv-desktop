@@ -14,6 +14,16 @@ import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import com.drew.metadata.xmp.XmpDirectory;
+import com.sun.imageio.plugins.jpeg.JPEGMetadata;
+import org.apache.commons.imaging.ImageReadException;
+import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
+import org.apache.commons.imaging.formats.tiff.JpegImageData;
+import org.apache.commons.imaging.formats.tiff.TiffField;
+import org.apache.commons.imaging.formats.tiff.constants.*;
+import org.apache.commons.imaging.formats.tiff.fieldtypes.FieldType;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoShortOrLong;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,18 +42,59 @@ public class ImageMetadata {
     private String serialNumber;
 
 
-    public ImageMetadata(File file) throws ImageProcessingException, IOException, MetadataException {
+
+
+    public ImageMetadata(File file) {
         this.file = file;
-        Metadata metadata = ImageMetadataReader.readMetadata(file);
 
-        JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
-        ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+//        try {
+//            printMetadata();
+//        } catch (ImageProcessingException | IOException | XMPException e) {
+//            e.printStackTrace();
+//        }
 
-        this.id = exifSubIFDDirectory.getda
-        this.height= jpegDirectory.getImageHeight();
-        this.width = jpegDirectory.getImageWidth();
+        try {
+            readJpegMetadata();
+        } catch (ImageProcessingException | IOException | MetadataException e) {
+            e.printStackTrace();
+        }
+
+
+        try {
+            readExifMetadata();
+        } catch (ImageReadException | IOException e) {
+            e.printStackTrace();
+        }
 
     }
+
+    private void readJpegMetadata() throws ImageProcessingException, IOException, MetadataException {
+        Metadata metadata = ImageMetadataReader.readMetadata(file);
+        JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
+        ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+        this.height= jpegDirectory.getImageHeight();
+        this.width = jpegDirectory.getImageWidth();
+    }
+
+    private void readExifMetadata() throws ImageReadException, IOException {
+        org.apache.commons.imaging.common.ImageMetadata imageMetadata = (JpegImageMetadata) Imaging.getMetadata(file);
+        if (imageMetadata instanceof JpegImageMetadata) {
+            JpegImageMetadata metadata = (JpegImageMetadata) imageMetadata;
+            this.id = (String) getTagValue(metadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID);
+        } else {
+            throw new ImageReadException("Not a Jpeg Image");
+        }
+    }
+
+    private Object getTagValue(JpegImageMetadata metadata, TagInfo tagInfo) throws ImageReadException {
+        TiffField field = metadata.findEXIFValue(tagInfo);
+        if (field == null) {
+            return null;
+        } else return field.getValue();
+    }
+
+
+
 
 /*    public ImageMetadata(File file) throws ImageProcessingException, IOException {
 
@@ -108,6 +159,7 @@ public class ImageMetadata {
         for (Directory directory : metadata.getDirectories()) {
             for (Tag tag : directory.getTags()) {
                 System.out.println("readImageMetadata: " + directory.getName() + " " + tag.getTagName() + " " + tag.getDescription());
+//                System.out.println(tag.g);
             }
 
             if (directory.hasErrors()) {
