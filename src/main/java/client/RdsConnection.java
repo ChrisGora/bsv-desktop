@@ -203,8 +203,6 @@ class RdsConnection implements AutoCloseable {
 
     private X509Certificate newCertificate() throws CertificateException, MalformedURLException {
 
-        System.out.println(">>>>>>>>>> HERE");
-
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 //        URL url = new File(SSL_CERTIFICATE).toURI().toURL();
         URL url = RdsConnection.class.getClassLoader().getResource(SSL_CERTIFICATE);

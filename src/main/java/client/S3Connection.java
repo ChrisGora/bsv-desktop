@@ -1,22 +1,33 @@
 package client;
 
+import com.amazonaws.event.ProgressEventType;
+import com.amazonaws.regions.Region;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
 class S3Connection extends Task<Void> {
 
-    private AmazonS3 s3;
+
+
+    private static AmazonS3 s3 = null;
+//    private AmazonS3 s3;
     private UploadHolder upload;
 
+    // TODO: 20/07/18 replace region with s3
+
     S3Connection(Regions region, UploadHolder upload) {
-        this.s3 = AmazonS3ClientBuilder
-                .standard()
-                .withRegion(region)
-                .build();
+        if (s3 == null) {
+
+            s3 = AmazonS3ClientBuilder
+                    .standard()
+                    .withRegion(region)
+                    .build();
+        }
 
         this.upload = upload;
     }
@@ -37,11 +48,33 @@ class S3Connection extends Task<Void> {
 //                ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(upload, progressEvent.getBytesTransferred());
 //                Platform.runLater(notifier);
 
-                upload.onBytesUploaded(progressEvent.getBytesTransferred());
+//                System.out.println("PROGRESS: " + progressEvent);
+
+                if (progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT
+                    || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT
+                    || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT) {
+
+                    upload.onFailure(progressEvent.toString());
+                } else {
+                    upload.onBytesUploaded(progressEvent.getBytesTransferred());
+                }
+
+//                upload.setCompletionListener((upload) -> {
+//                    System.out.println("S3 shutdown");
+//                    s3.shutdown();
+//                });
 
                 // FIXME: 16/07/18 Am I creating a million executors ?? - run with visual VM
             });
 
+
+
             s3.putObject(request);
+    }
+
+    private void removeFile() {
+        DeleteObjectRequest request= new DeleteObjectRequest(upload.getBucket(), upload.getKey());
+//        request.setGeneralProgressListener();
+        s3.deleteObject(request);
     }
 }

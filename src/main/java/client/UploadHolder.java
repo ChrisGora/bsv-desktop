@@ -1,5 +1,7 @@
 package client;
 
+import org.junit.internal.runners.statements.Fail;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +15,15 @@ public class UploadHolder {
     private long uploadedSize;
     private String key;
     private String bucket;
+
     private List<ProgressObserver> progressObservers;
     private List<CompletionObserver> completionObservers;
+    private List<FailureObserver> failureObservers;
 
     UploadHolder() {
         this.progressObservers = new ArrayList<>();
         this.completionObservers = new ArrayList<>();
+        this.failureObservers = new ArrayList<>();
     }
 
     public File getFile() {
@@ -57,6 +62,12 @@ public class UploadHolder {
         }
     }
 
+    public void onFailure(String error) {
+        for (FailureObserver observer : failureObservers) {
+            observer.onFailure(error);
+        }
+    }
+
     public String getKey() {
         return key;
     }
@@ -89,5 +100,11 @@ public class UploadHolder {
         if (completionObservers.contains(observer))
             throw new IllegalArgumentException("The observer to be registered has already been registered");
         else completionObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+    }
+
+    public void setFailureListener(FailureObserver observer) {
+        if (failureObservers.contains(observer))
+            throw new IllegalArgumentException("The observer to be registered has already been registered");
+        else failureObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
     }
 }

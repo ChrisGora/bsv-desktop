@@ -1,8 +1,16 @@
 package client;
 
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.drew.imaging.ImageProcessingException;
+import com.drew.metadata.MetadataException;
+import org.apache.commons.imaging.ImageReadException;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.UUID;
@@ -26,7 +34,13 @@ public class Uploader {
     public UploadHolder upload(File file) {
         String id = null;
 
-        ImageMetadata metadata = new ImageMetadata(file);
+        ImageMetadata metadata = null;
+        try {
+            metadata = new ImageMetadata(file);
+        } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
+            e.printStackTrace();
+            return null;
+        }
         id = metadata.getId();
 
         if (id == null) {
@@ -47,7 +61,7 @@ public class Uploader {
 //        ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(s3Connection::call);
 
-        System.out.println("WTF");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
         upload.setCompletionListener(this::updateDatabase);
 
         return upload;
@@ -73,12 +87,6 @@ public class Uploader {
                         upload.getBucket(),
                         upload.getKey()
                 );
-
-            // FIXME: 19/07/18 Don't run the database connection on the main thread!!!!!!!
-
-//            if (result == 1) {
-//                System.out.println("Database Update Successful");
-//            }
 
             } catch (Exception e) {
                 e.printStackTrace();

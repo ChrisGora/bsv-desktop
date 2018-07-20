@@ -44,28 +44,10 @@ public class ImageMetadata {
 
 
 
-    public ImageMetadata(File file) {
+    public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
         this.file = file;
-
-//        try {
-//            printMetadata();
-//        } catch (ImageProcessingException | IOException | XMPException e) {
-//            e.printStackTrace();
-//        }
-
-        try {
-            readJpegMetadata();
-        } catch (ImageProcessingException | IOException | MetadataException e) {
-            e.printStackTrace();
-        }
-
-
-        try {
-            readExifMetadata();
-        } catch (ImageReadException | IOException e) {
-            e.printStackTrace();
-        }
-
+        readJpegMetadata();
+        readExifMetadata();
     }
 
     private void readJpegMetadata() throws ImageProcessingException, IOException, MetadataException {
