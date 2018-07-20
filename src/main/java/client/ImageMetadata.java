@@ -56,6 +56,7 @@ public class ImageMetadata {
         ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
         this.height= jpegDirectory.getImageHeight();
         this.width = jpegDirectory.getImageWidth();
+
     }
 
     private void readExifMetadata() throws ImageReadException, IOException {
@@ -63,6 +64,8 @@ public class ImageMetadata {
         if (imageMetadata instanceof JpegImageMetadata) {
             JpegImageMetadata metadata = (JpegImageMetadata) imageMetadata;
             this.id = (String) getTagValue(metadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID);
+            // TODO: 20/07/18 Extract the date from the image metadata
+            // TODO: 20/07/18 Set up code for extracting longitude and latitude
         } else {
             throw new ImageReadException("Not a Jpeg Image");
         }
