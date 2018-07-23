@@ -10,9 +10,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
-class S3Connection extends Task<Void> {
-
-
+//class S3Connection extends Task<Void> {
+class S3Connection implements Runnable {
 
     private static AmazonS3 s3 = null;
 //    private AmazonS3 s3;
@@ -32,10 +31,15 @@ class S3Connection extends Task<Void> {
         this.upload = upload;
     }
 
+//    @Override
+//    protected Void call() throws Exception {
+//        uploadFile();
+//        return null;
+//    }
+
     @Override
-    protected Void call() throws Exception {
+    public void run() {
         uploadFile();
-        return null;
     }
 
     // Needs to upload a photo and return some sort of reference (a url?)
@@ -49,6 +53,10 @@ class S3Connection extends Task<Void> {
 //                Platform.runLater(notifier);
 
 //                System.out.println("PROGRESS: " + progressEvent);
+
+                if (Thread.interrupted()) {
+                    s3.shutdown();
+                }
 
                 if (progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT
                     || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT

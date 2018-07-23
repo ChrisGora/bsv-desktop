@@ -1,18 +1,14 @@
 package client;
 
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
+import javafx.concurrent.Task;
 import org.apache.commons.imaging.ImageReadException;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,25 +37,39 @@ public class Uploader {
             e.printStackTrace();
             return null;
         }
+
+        UploadHolder upload = new UploadHolder();
+        upload.setFile(file);
+        upload.setMetadata(metadata);
+
         id = metadata.getId();
 
         if (id == null) {
             System.out.println("Image ID was null");
-            id = UUID.randomUUID().toString().replace("-", "");
+//            if (file.getName().contains("_E")) {
+//                upload.onFailure("Image ID was null");
+//                return upload;
+
+                // FIXME: 23/07/18 onFailure called before the upload is registered with JavaFX
+
+//            }
+
+//            else {
+                id = UUID.randomUUID().toString().replace("-", "");
+//            }
         }
 
         String key = id + "-" + file.getName();
         System.out.println(key);
 
-        UploadHolder upload = new UploadHolder();
-        upload.setFile(file);
-        upload.setMetadata(metadata);
         upload.setKey(key);
         upload.setBucket(BUCKET);
 
-        S3Connection s3Connection = new S3Connection(Regions.EU_WEST_2, upload);
+//        Runnable storageConnection = new S3Connection(Regions.EU_WEST_2, upload);
+        Runnable storageConnection = new LocalStorageConnection(upload);
+
 //        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(s3Connection::call);
+        executor.submit(storageConnection);
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
         upload.setCompletionListener(this::updateDatabase);
@@ -68,8 +78,11 @@ public class Uploader {
     }
 
     private void updateDatabase(UploadHolder upload) {  // TODO: 19/07/18 Supply the database with the metadata
+
+        LocalDateTime localDateTime = LocalDateTime.now();
+
         executor.submit(() -> {
-            try (RdsConnection rds = new RdsConnection()) {
+            try (DatabaseConnection rds = new DatabaseConnection()) {
                 System.out.println("Uploader established an RDS connection");
 //            System.out.println(upload.getBucket());
 //            System.out.println(upload.getKey());
@@ -78,8 +91,10 @@ public class Uploader {
                         metadata.getId(),
                         metadata.getHeight(),
                         metadata.getWidth(),
-                        new Timestamp((new Date()).getTime()),
-                        new Timestamp(new Date().getTime()),
+//                        new Timestamp((new Date()).getTime()),
+//                        new Timestamp(new Date().getTime()),
+                        metadata.getPhotoDateTime(),
+                        localDateTime,
                         metadata.getLatitude(),
                         metadata.getLongitude(),
                         metadata.getSerialNumber(),

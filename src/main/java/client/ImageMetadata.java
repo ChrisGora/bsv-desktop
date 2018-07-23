@@ -10,24 +10,22 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
-import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import com.drew.metadata.xmp.XmpDirectory;
-import com.sun.imageio.plugins.jpeg.JPEGMetadata;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
-import org.apache.commons.imaging.formats.tiff.JpegImageData;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.constants.*;
-import org.apache.commons.imaging.formats.tiff.fieldtypes.FieldType;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
-import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoShortOrLong;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class ImageMetadata {
@@ -36,7 +34,7 @@ public class ImageMetadata {
     private String id;
     private int height;
     private int width;
-    private Date date;
+    private LocalDateTime photoDateTime;
     private double latitude;
     private double longitude;
     private String serialNumber;
@@ -63,7 +61,42 @@ public class ImageMetadata {
         org.apache.commons.imaging.common.ImageMetadata imageMetadata = (JpegImageMetadata) Imaging.getMetadata(file);
         if (imageMetadata instanceof JpegImageMetadata) {
             JpegImageMetadata metadata = (JpegImageMetadata) imageMetadata;
+
             this.id = (String) getTagValue(metadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID);
+
+//            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+//            System.out.println(getTagValue(metadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID));
+
+            String dateTimeString = (String) getTagValue(metadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+            System.out.println(">>>>> DATE AS A STRING: " + dateTimeString);
+
+//            DateFormat dateFormat = new SimpleDateFormat();
+
+//            try {
+            if (dateTimeString != null) {
+                String dateString = dateTimeString.substring(0, 10).replace(":", "-");
+                String timeString = dateTimeString.substring(11);
+                System.out.println("DATE STRING: >" + dateString + "<");
+                System.out.println("TIME STRING: >" + timeString + "<");
+
+//                    DateTimeFormatter.ISO_LOCAL_DATE.parse(dateString);
+
+//                    LocalDate date = LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
+
+                LocalDate localDate = LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
+                LocalTime localTime = LocalTime.parse(timeString);
+
+                photoDateTime = LocalDateTime.of(localDate, localTime);
+
+                System.out.println("DATETIME: " + photoDateTime);
+
+            }
+//                Date date = dateFormat.parse(dateTimeString);
+//                System.out.println(">>>>> DATE AS A STRING: v2: " + date);
+//            } catch (ParseException e) {
+//                e.printStackTrace();
+//            }
+
             // TODO: 20/07/18 Extract the date from the image metadata
             // TODO: 20/07/18 Set up code for extracting longitude and latitude
         } else {
@@ -179,8 +212,8 @@ public class ImageMetadata {
         return width;
     }
 
-    public Date getDate() {
-        return date;
+    public LocalDateTime getPhotoDateTime() {
+        return photoDateTime;
     }
 
     public double getLatitude() {

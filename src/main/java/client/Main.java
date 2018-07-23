@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -50,6 +51,9 @@ public class Main extends Application {
 
         // TODO: 20/07/18 Add progress grid labels: "Progress" , "S3 Upload Status", "RDS Update Status"
 
+        ScrollPane scrollPane = new ScrollPane();
+//        scrollPane.setVmin(300);
+        scrollPane.setContent(progressGrid);
 
         mainGrid.setHgap(6);
         mainGrid.setVgap(6);
@@ -57,7 +61,7 @@ public class Main extends Application {
         mainGrid.getChildren().addAll(singleFileButton, multipleFilesButton, photoUploadButton);
 
         this.rootGroup = new VBox(12);
-        rootGroup.getChildren().addAll(mainGrid, progressGrid);
+        rootGroup.getChildren().addAll(mainGrid, scrollPane);
         rootGroup.setPadding(new Insets(12, 12, 12, 12));
 
         primaryStage.setScene(new Scene(rootGroup));

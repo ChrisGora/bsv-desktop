@@ -19,6 +19,7 @@ public class ImageMetadataTest {
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
         ImageMetadata metadata = null;
+
         try {
             metadata = new ImageMetadata(file);
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {

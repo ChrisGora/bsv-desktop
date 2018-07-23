@@ -28,6 +28,7 @@ public class UploaderTest {
         };
 
         upload.setCompletionListener(this::onCompleted);
+        upload.setFailureListener(this::onFailure);
 
         synchronized (completionObserver) {
             try {
@@ -53,4 +54,7 @@ public class UploaderTest {
         System.out.println("DONE: " + uploadHolder.getKey());
     }
 
+    private void onFailure(String error) {
+        System.out.println("ERROR: " + error);
+    }
 }

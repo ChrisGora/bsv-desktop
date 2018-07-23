@@ -1,24 +1,21 @@
 package client;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
-import static org.junit.Assert.*;
-
-public class RdsConnectionTest {
+public class DatabaseConnectionTest {
 
     @Test
-    public void authTokenTest() {
-        try (RdsConnection rds = new RdsConnection()) {
+    public void connectionTest() {
+        try (DatabaseConnection rds = new DatabaseConnection()) {
             rds.insertPhotoRow(
-                    "123456",
+                    "1234567",
                     1000,
                     1000,
-                    new Timestamp(new java.util.Date().getTime()),
-                    new Timestamp(new java.util.Date().getTime()),
+                    LocalDateTime.now(),
+                    LocalDateTime.now(),
                     123.34455,
                     4555.5600054,
                     "12345567",

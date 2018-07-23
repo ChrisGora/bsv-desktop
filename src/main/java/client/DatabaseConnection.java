@@ -1,17 +1,7 @@
 package client;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.AmazonRDSClientBuilder;
-import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
-import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
-import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
-import com.google.common.annotations.VisibleForTesting;
-import com.sun.org.apache.regexp.internal.RE;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,11 +18,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.*;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Properties;
 
-class RdsConnection implements AutoCloseable {
+class DatabaseConnection implements AutoCloseable {
 
     private static final DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
     private static final String AWS_ACCESS_KEY = creds.getCredentials().getAWSAccessKeyId();
@@ -40,11 +30,11 @@ class RdsConnection implements AutoCloseable {
 
     //    private static final Region REGION = Region.getRegion(Regions.EU_WEST_2);
     private static final Regions REGION = Regions.EU_WEST_2;
-    private static final String HOSTNAME = "rds-mysql-uob-bristolstreetview.crvuxxvm3uvv.eu-west-2.rds.amazonaws.com";
+    private static final String HOSTNAME = "localhost";
     private static final int PORT = 3306;
-    private static final String JDBC_URL = "jdbc:mysql://" + HOSTNAME + ":" + PORT + "/bristolstreetviewdb";
+    private static final String JDBC_URL = "jdbc:mysql://" + HOSTNAME + ":" + PORT + "/bristol_streetview_schema";
     private static final String USERNAME = "java-db-client";
-    private static final String PASSWORD = "y2W06^*R^P4Xdtql"; // FIXME: 17/07/18 Password as plaintext!
+    private static final String PASSWORD = "v1M4^qVAU!3084NF"; // FIXME: 17/07/18 Password as plaintext!
 
     private static final String KEY_STORE_TYPE = "JKS";
     private static final String KEY_STORE_PROVIDER = "SUN";
@@ -56,7 +46,7 @@ class RdsConnection implements AutoCloseable {
 
     private Connection connection;
 
-    public RdsConnection() {
+    public DatabaseConnection() {
 
         try {
             this.connection = newConnection();
@@ -94,7 +84,7 @@ class RdsConnection implements AutoCloseable {
         }
 
 
-        System.out.println("HERE 2");
+//        System.out.println("HERE 2");
         Properties info = newMySqlProperties();
         Connection c = DriverManager.getConnection(JDBC_URL, info);
 //        c.setAutoCommit(false);
@@ -125,8 +115,8 @@ class RdsConnection implements AutoCloseable {
     public int insertPhotoRow(String id,
                        int height,
                        int width,
-                       Timestamp PhotoTimestamp,
-                       Timestamp UploadTimeStamp,
+                       LocalDateTime photoDateTime,
+                       LocalDateTime uploadDateTime,
                        Double latitude,
                        Double longitude,
                        String cameraSerialNumber,
@@ -142,13 +132,16 @@ class RdsConnection implements AutoCloseable {
 
         int n = -1;
 
+        Timestamp photoTimestamp = Timestamp.valueOf(photoDateTime);
+        Timestamp uploadTimeStamp = Timestamp.valueOf(uploadDateTime);
+
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
             statement.setInt(2, height);
             statement.setInt(3, width);
-            statement.setTimestamp(4, PhotoTimestamp);
-            statement.setTimestamp(5, UploadTimeStamp);
+            statement.setTimestamp(4, photoTimestamp);
+            statement.setTimestamp(5, uploadTimeStamp);
             statement.setBigDecimal(6, new BigDecimal(latitude));
             statement.setBigDecimal(7, new BigDecimal(longitude));
             statement.setString(8, cameraSerialNumber);
@@ -205,7 +198,7 @@ class RdsConnection implements AutoCloseable {
 
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 //        URL url = new File(SSL_CERTIFICATE).toURI().toURL();
-        URL url = RdsConnection.class.getClassLoader().getResource(SSL_CERTIFICATE);
+        URL url = DatabaseConnection.class.getClassLoader().getResource(SSL_CERTIFICATE);
         Objects.requireNonNull(url, "X509Certificate URL was null");
 
         System.out.println(url);
