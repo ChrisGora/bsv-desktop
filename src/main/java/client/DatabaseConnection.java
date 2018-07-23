@@ -123,7 +123,7 @@ class DatabaseConnection implements AutoCloseable {
                        int routeId,
                        String s3BucketName,
                        String s3Key
-    ) {
+    ) throws SQLException {
 
         String sql = "INSERT INTO Photo " +
                 "(id, height, width, photoTimestamp, uploadTimestamp, latitude, longitude, cameraSerialNumber, routeId, s3BucketName, s3Key) " +
@@ -152,8 +152,8 @@ class DatabaseConnection implements AutoCloseable {
             n = statement.executeUpdate();
             System.out.println("INSERT RESULT: " + n);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+//        } catch (SQLException e) {
+//            e.printStackTrace();
         }
 
         return  n;

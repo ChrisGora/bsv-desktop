@@ -27,39 +27,48 @@ public class Uploader {
 //        s3Connection.listBuckets();
 //    }
 
-    public UploadHolder upload(File file) {
+    public UploadHolder newUploadHolder(File file) {
+        UploadHolder uploadHolder = new UploadHolder();
+        uploadHolder.setFile(file);
+        return uploadHolder;
+    }
+
+
+    // TODO: 23/07/18 Change the signature: void upload(UploadHolder)
+
+    public void upload(UploadHolder upload) {
         String id = null;
 
         ImageMetadata metadata = null;
         try {
-            metadata = new ImageMetadata(file);
+            metadata = new ImageMetadata(upload.getFile());
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
             e.printStackTrace();
-            return null;
+            upload.onFailure(e.toString());
+            return;
         }
 
-        UploadHolder upload = new UploadHolder();
-        upload.setFile(file);
+//        UploadHolder upload = new UploadHolder();
+//        upload.setFile(file);
         upload.setMetadata(metadata);
 
         id = metadata.getId();
 
+
         if (id == null) {
-            System.out.println("Image ID was null");
-//            if (file.getName().contains("_E")) {
-//                upload.onFailure("Image ID was null");
-//                return upload;
+//            System.out.println("Image ID was null");
+            if (upload.getFile().getName().contains("_E")) {
+                upload.onFailure("Image ID was null");
+                return;
+            }
 
-                // FIXME: 23/07/18 onFailure called before the upload is registered with JavaFX
-
-//            }
-
-//            else {
+            else {
                 id = UUID.randomUUID().toString().replace("-", "");
-//            }
+                metadata.setId(id);
+            }
         }
 
-        String key = id + "-" + file.getName();
+        String key = id + "-" + upload.getFile().getName();
         System.out.println(key);
 
         upload.setKey(key);
@@ -74,7 +83,7 @@ public class Uploader {
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
         upload.setCompletionListener(this::updateDatabase);
 
-        return upload;
+//        return upload;
     }
 
     private void updateDatabase(UploadHolder upload) {  // TODO: 19/07/18 Supply the database with the metadata
@@ -105,6 +114,7 @@ public class Uploader {
 
             } catch (Exception e) {
                 e.printStackTrace();
+                upload.onFailure("ID: " + upload.getMetadata().getId() + e.toString());
             }
         });
     }

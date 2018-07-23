@@ -76,14 +76,19 @@ public class Main extends Application {
         singleFileButton.setOnAction((event) -> {
             fileChooser.setTitle("Upload file");
             File file = fileChooser.showOpenDialog(primaryStage);
-            if (file != null) {
-                UploadHolder uploadStatus = uploader.upload(file);
-                if (uploadStatus != null) {
-                    showUploadProgress(primaryStage, uploadStatus);
-                }
-            }
+            handleFile(primaryStage, file);
         });
         return singleFileButton;
+    }
+
+    private void handleFile(Stage primaryStage, File file) {
+        if (file != null) {
+            UploadHolder upload = uploader.newUploadHolder(file);
+            if (upload != null) {
+                showUploadProgress(primaryStage, upload);
+                uploader.upload(upload);
+            }
+        }
     }
 
     private Button getMultipleFilesButton(Stage primaryStage, FileChooser fileChooser) {
@@ -96,12 +101,7 @@ public class Main extends Application {
             List<File> files = fileChooser.showOpenMultipleDialog(primaryStage);
             if (files != null) {
                 for (File file : files) {
-                    if (file != null) {
-                        UploadHolder uploadStatus = uploader.upload(file);
-                        if (uploadStatus != null) {
-                            showUploadProgress(primaryStage, uploadStatus);
-                        }
-                    }
+                    handleFile(primaryStage, file);
                 }
             }
         });
@@ -118,11 +118,8 @@ public class Main extends Application {
             List<File> files = fileChooser.showOpenMultipleDialog(primaryStage);
             if (files != null) {
                 for (File file : files) {
-                    if (file != null && file.getPath().contains("_E.jpg")) {
-                        UploadHolder uploadStatus = uploader.upload(file);
-                        if (uploadStatus != null) {
-                            showUploadProgress(primaryStage, uploadStatus);
-                        }
+                    if (file.getPath().contains("_E.jpg")) {
+                        handleFile(primaryStage, file);
                     }
                 }
             }
@@ -140,13 +137,13 @@ public class Main extends Application {
         ProgressBar progressBar = new ProgressBar();
         Text filename = new Text(filenameString);
 
-        Text s3Status = new Text("S3 UPLOAD NOT STARTED");
-        Text rdsStatus = new Text("RDS UPDATE NOT STARTED");
+        Text copyStatus = new Text("UPLOAD NOT STARTED");
+        Text dbStatus = new Text("DATABASE UPDATE NOT STARTED");
 
         GridPane.setConstraints(progressBar, 0, filesSubmitted);
         GridPane.setConstraints(filename, 1, filesSubmitted);
-        GridPane.setConstraints(s3Status, 2, filesSubmitted);
-        GridPane.setConstraints(rdsStatus, 3, filesSubmitted);
+        GridPane.setConstraints(copyStatus, 2, filesSubmitted);
+        GridPane.setConstraints(dbStatus, 3, filesSubmitted);
 
 //        Button cancelButton
 
@@ -154,14 +151,14 @@ public class Main extends Application {
             Platform.runLater(() -> {
                 progressBar.setProgress(progress);
 //                progressBar.setStyle("-fx-accent: yellow;");
-                s3Status.setText("S3 UPLOAD IN PROGRESS...");
+                copyStatus.setText("UPLOAD IN PROGRESS...");
             });
         });
 
         uploadStatus.setCompletionListener((upload) -> {
             Platform.runLater(() -> {
                 progressBar.setStyle("-fx-accent: green;");
-                s3Status.setText("S3 UPLOAD SUCCESSFUL");
+                copyStatus.setText("UPLOAD SUCCESSFUL");
 //                progressGrid.getChildren().remove(progressBar);
             });
 
@@ -170,11 +167,11 @@ public class Main extends Application {
         uploadStatus.setFailureListener((error) -> {
             Platform.runLater(() -> {
                 progressBar.setStyle("-fx-accent: red;");
-                s3Status.setText("!!! S3 UPLOAD ERROR !!! >>> " + error);
+                copyStatus.setText("UPLOAD ERROR >>> " + error);
             });
         });
 
-        progressGrid.getChildren().addAll(progressBar, filename, s3Status, rdsStatus);
+        progressGrid.getChildren().addAll(progressBar, filename, copyStatus, dbStatus);
     }
 
 }

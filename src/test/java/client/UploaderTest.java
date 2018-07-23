@@ -14,7 +14,7 @@ public class UploaderTest {
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
         Uploader uploader = new Uploader();
-        UploadHolder upload = uploader.upload(file);
+        UploadHolder upload = uploader.newUploadHolder(file);
         upload.setProgressListener(this::onProgressUpdated);
 
         CompletionObserver completionObserver = new CompletionObserver() {
@@ -29,6 +29,8 @@ public class UploaderTest {
 
         upload.setCompletionListener(this::onCompleted);
         upload.setFailureListener(this::onFailure);
+
+        uploader.upload(upload);
 
         synchronized (completionObserver) {
             try {

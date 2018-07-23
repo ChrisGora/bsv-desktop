@@ -204,6 +204,10 @@ public class ImageMetadata {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public int getHeight() {
         return height;
     }
