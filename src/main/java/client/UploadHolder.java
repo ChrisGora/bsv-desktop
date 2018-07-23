@@ -1,7 +1,5 @@
 package client;
 
-import org.junit.internal.runners.statements.Fail;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +15,17 @@ public class UploadHolder {
     private String bucket;
 
     private List<ProgressObserver> progressObservers;
-    private List<CompletionObserver> completionObservers;
-    private List<FailureObserver> failureObservers;
+    private List<CompletionObserver> uploadCompletionObservers;
+    private List<CompletionObserver> dbUpdateCompletionObservers;
+    private List<FailureObserver> uploadFailureObservers;
+    private List<FailureObserver> dbFailureObservers;
 
     UploadHolder() {
         this.progressObservers = new ArrayList<>();
-        this.completionObservers = new ArrayList<>();
-        this.failureObservers = new ArrayList<>();
+        this.uploadCompletionObservers = new ArrayList<>();
+        this.dbUpdateCompletionObservers = new ArrayList<>();
+        this.uploadFailureObservers = new ArrayList<>();
+        this.dbFailureObservers = new ArrayList<>();
     }
 
     public File getFile() {
@@ -54,7 +56,7 @@ public class UploadHolder {
             }
 
             if (progress == 1) {
-                for (CompletionObserver observer : completionObservers) {
+                for (CompletionObserver observer : uploadCompletionObservers) {
                     System.out.println("Completion observer called");
                     observer.onDone(this);
                 }
@@ -62,8 +64,20 @@ public class UploadHolder {
         }
     }
 
-    public void onFailure(String error) {
-        for (FailureObserver observer : failureObservers) {
+    public void onUploadFailure(String error) {
+        for (FailureObserver observer : uploadFailureObservers) {
+            observer.onFailure(error);
+        }
+    }
+
+    public void onDbSuccess() {
+        for (CompletionObserver observer : dbUpdateCompletionObservers) {
+            observer.onDone(this);
+        }
+    }
+
+    public void onDbFailure(String error) {
+        for (FailureObserver observer : dbFailureObservers) {
             observer.onFailure(error);
         }
     }
@@ -96,15 +110,27 @@ public class UploadHolder {
         else progressObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
     }
 
-    public void setCompletionListener(CompletionObserver observer) {
-        if (completionObservers.contains(observer))
+    public void setUploadCompletionListener(CompletionObserver observer) {
+        if (uploadCompletionObservers.contains(observer))
             throw new IllegalArgumentException("The observer to be registered has already been registered");
-        else completionObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+        else uploadCompletionObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
     }
 
-    public void setFailureListener(FailureObserver observer) {
-        if (failureObservers.contains(observer))
+    public void setUploadFailureListener(FailureObserver observer) {
+        if (uploadFailureObservers.contains(observer))
             throw new IllegalArgumentException("The observer to be registered has already been registered");
-        else failureObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+        else uploadFailureObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+    }
+
+    public void setDbUpdateCompletionListener(CompletionObserver observer) {
+        if (dbUpdateCompletionObservers.contains(observer))
+            throw new IllegalArgumentException("The observer to be registered has already been registered");
+        else dbUpdateCompletionObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
+    }
+
+    public void setDbFailureListener(FailureObserver observer) {
+        if (dbFailureObservers.contains(observer))
+            throw new IllegalArgumentException("The observer to be registered has already been registered");
+        else dbFailureObservers.add(Objects.requireNonNull(observer, "Observer to register was null"));
     }
 }

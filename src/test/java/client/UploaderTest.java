@@ -27,8 +27,8 @@ public class UploaderTest {
             }
         };
 
-        upload.setCompletionListener(this::onCompleted);
-        upload.setFailureListener(this::onFailure);
+        upload.setUploadCompletionListener(this::onCompleted);
+        upload.setUploadFailureListener(this::onFailure);
 
         uploader.upload(upload);
 

@@ -155,7 +155,7 @@ public class Main extends Application {
             });
         });
 
-        uploadStatus.setCompletionListener((upload) -> {
+        uploadStatus.setUploadCompletionListener((upload) -> {
             Platform.runLater(() -> {
                 progressBar.setStyle("-fx-accent: green;");
                 copyStatus.setText("UPLOAD SUCCESSFUL");
@@ -164,10 +164,22 @@ public class Main extends Application {
 
         });
 
-        uploadStatus.setFailureListener((error) -> {
+        uploadStatus.setUploadFailureListener((error) -> {
             Platform.runLater(() -> {
                 progressBar.setStyle("-fx-accent: red;");
                 copyStatus.setText("UPLOAD ERROR >>> " + error);
+            });
+        });
+
+        uploadStatus.setDbUpdateCompletionListener((uploadHolder) -> {
+            Platform.runLater(() -> {
+                dbStatus.setText("DATABASE UPDATE OK");
+            });
+        });
+
+        uploadStatus.setDbFailureListener((error) -> {
+            Platform.runLater(() -> {
+                dbStatus.setText("DATABASE ERROR " + error);
             });
         });
 

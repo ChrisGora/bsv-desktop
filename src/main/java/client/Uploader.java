@@ -1,9 +1,7 @@
 package client;
 
-import com.amazonaws.regions.Regions;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
-import javafx.concurrent.Task;
 import org.apache.commons.imaging.ImageReadException;
 
 import java.io.File;
@@ -44,7 +42,7 @@ public class Uploader {
             metadata = new ImageMetadata(upload.getFile());
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
             e.printStackTrace();
-            upload.onFailure(e.toString());
+            upload.onUploadFailure(e.toString());
             return;
         }
 
@@ -58,7 +56,7 @@ public class Uploader {
         if (id == null) {
 //            System.out.println("Image ID was null");
             if (upload.getFile().getName().contains("_E")) {
-                upload.onFailure("Image ID was null");
+                upload.onUploadFailure("Image ID was null");
                 return;
             }
 
@@ -81,7 +79,7 @@ public class Uploader {
         executor.submit(storageConnection);
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
-        upload.setCompletionListener(this::updateDatabase);
+        upload.setUploadCompletionListener(this::updateDatabase);
 
 //        return upload;
     }
@@ -96,7 +94,7 @@ public class Uploader {
 //            System.out.println(upload.getBucket());
 //            System.out.println(upload.getKey());
                 ImageMetadata metadata = upload.getMetadata();
-                rds.insertPhotoRow(
+                int result = rds.insertPhotoRow(
                         metadata.getId(),
                         metadata.getHeight(),
                         metadata.getWidth(),
@@ -112,9 +110,15 @@ public class Uploader {
                         upload.getKey()
                 );
 
+                if (result == 1) {
+                    upload.onDbSuccess();
+                } else {
+                    upload.onDbFailure("Database error - database returned: " + result);
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
-                upload.onFailure("ID: " + upload.getMetadata().getId() + e.toString());
+                upload.onDbFailure(e.toString());
             }
         });
     }

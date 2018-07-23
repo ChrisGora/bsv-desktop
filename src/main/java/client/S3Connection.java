@@ -1,14 +1,11 @@
 package client;
 
 import com.amazonaws.event.ProgressEventType;
-import com.amazonaws.regions.Region;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
 
 //class S3Connection extends Task<Void> {
 class S3Connection implements Runnable {
@@ -62,12 +59,12 @@ class S3Connection implements Runnable {
                     || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT
                     || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT) {
 
-                    upload.onFailure(progressEvent.toString());
+                    upload.onUploadFailure(progressEvent.toString());
                 } else {
                     upload.onBytesUploaded(progressEvent.getBytesTransferred());
                 }
 
-//                upload.setCompletionListener((upload) -> {
+//                upload.setUploadCompletionListener((upload) -> {
 //                    System.out.println("S3 shutdown");
 //                    s3.shutdown();
 //                });

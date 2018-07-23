@@ -1,12 +1,8 @@
 package client;
 
-import javafx.concurrent.Task;
-
 import java.io.*;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 
 public class LocalStorageConnection implements Runnable {
 
@@ -48,16 +44,16 @@ public class LocalStorageConnection implements Runnable {
             if (mkdirSuccessful && !file.exists()) {
                 createFileSuccessful = file.createNewFile();
             } else if (file.exists()){
-                uploadHolder.onFailure("Duplicate filename");
+                uploadHolder.onUploadFailure("Duplicate filename");
                 return;
             } else {
-                uploadHolder.onFailure("Unknown error due to directory or empty file creation");
+                uploadHolder.onUploadFailure("Unknown error due to directory or empty file creation");
                 return;
             }
 
         } catch (IOException e) {
             e.printStackTrace();
-            uploadHolder.onFailure(e.toString());
+            uploadHolder.onUploadFailure(e.toString());
         }
 
         System.out.println(">>>>>>>>>>> DESTINATION: " + destination);
@@ -74,7 +70,7 @@ public class LocalStorageConnection implements Runnable {
 
             } catch (IOException e) {
                 e.printStackTrace();
-                uploadHolder.onFailure(e.toString());
+                uploadHolder.onUploadFailure(e.toString());
             }
 
         }
