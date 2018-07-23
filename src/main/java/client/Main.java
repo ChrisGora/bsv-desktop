@@ -179,6 +179,7 @@ public class Main extends Application {
 
         uploadStatus.setDbFailureListener((error) -> {
             Platform.runLater(() -> {
+                progressBar.setStyle("-fx-accent: red;");
                 dbStatus.setText("DATABASE ERROR " + error);
             });
         });
@@ -186,4 +187,9 @@ public class Main extends Application {
         progressGrid.getChildren().addAll(progressBar, filename, copyStatus, dbStatus);
     }
 
+    @Override
+    public void stop() throws Exception {
+        super.stop();
+        uploader.stop();
+    }
 }

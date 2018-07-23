@@ -18,7 +18,11 @@ public class Uploader {
     private ExecutorService executor;
 
     Uploader() {
-        this.executor = Executors.newFixedThreadPool(8);
+        this.executor = Executors.newFixedThreadPool(4);
+    }
+
+    public void stop() {
+        executor.shutdown();
     }
 
 //    public void test() {
@@ -114,6 +118,9 @@ public class Uploader {
                     upload.onDbSuccess();
                 } else {
                     upload.onDbFailure("Database error - database returned: " + result);
+
+                    // TODO: 23/07/18 Remove the photo from file storage if it was rejected by the database
+
                 }
 
             } catch (Exception e) {
