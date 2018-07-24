@@ -18,7 +18,7 @@ public class Uploader {
     private ExecutorService executor;
 
     Uploader() {
-        this.executor = Executors.newFixedThreadPool(4);
+        this.executor = Executors.newFixedThreadPool(2);
     }
 
     public void stop() {

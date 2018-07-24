@@ -17,6 +17,8 @@ import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
+import org.apache.commons.imaging.formats.tiff.TiffImageData;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.*;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
 
@@ -90,6 +92,20 @@ public class ImageMetadata {
 
                 System.out.println("DATETIME: " + photoDateTime);
 
+
+            }
+
+            TiffImageMetadata tiffImageMetadata = metadata.getExif();
+            if (tiffImageMetadata != null) {
+                TiffImageMetadata.GPSInfo gpsInfo = tiffImageMetadata.getGPS();
+                if (gpsInfo != null) {
+                    longitude = gpsInfo.getLongitudeAsDegreesEast();
+                    latitude = gpsInfo.getLatitudeAsDegreesNorth();
+
+                    System.out.println("GPS!!!!!");
+                    System.out.println(longitude);
+                    System.out.println(latitude);
+                }
             }
 //                Date date = dateFormat.parse(dateTimeString);
 //                System.out.println(">>>>> DATE AS A STRING: v2: " + date);

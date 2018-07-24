@@ -142,8 +142,8 @@ class DatabaseConnection implements AutoCloseable {
             statement.setInt(3, width);
             statement.setTimestamp(4, photoTimestamp);
             statement.setTimestamp(5, uploadTimeStamp);
-            statement.setBigDecimal(6, new BigDecimal(latitude));
-            statement.setBigDecimal(7, new BigDecimal(longitude));
+            statement.setDouble(6, latitude);
+            statement.setDouble(7, longitude);
             statement.setString(8, cameraSerialNumber);
             statement.setInt(9, routeId);
             statement.setString(10, s3BucketName);
