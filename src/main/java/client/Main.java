@@ -142,7 +142,8 @@ public class Main extends Application {
 
         GridPane.setConstraints(progressBar, 0, filesSubmitted);
         GridPane.setConstraints(filename, 1, filesSubmitted);
-     GridPane.setConstraints(dbStatus, 3, filesSubmitted);
+        GridPane.setConstraints(copyStatus, 2, filesSubmitted);
+        GridPane.setConstraints(dbStatus, 3, filesSubmitted);
 
 //        Button cancelButton
 
