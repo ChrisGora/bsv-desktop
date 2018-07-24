@@ -7,46 +7,38 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
+import java.util.Objects;
+
 //class S3Connection extends Task<Void> {
-class S3Connection implements Runnable {
+class S3Connection implements StorageConnection {
 
     private static AmazonS3 s3 = null;
 //    private AmazonS3 s3;
-    private UploadHolder upload;
+    private FileHolder fileHolder;
 
-    // TODO: 20/07/18 replace region with s3
-
-    S3Connection(Regions region, UploadHolder upload) {
+    S3Connection(FileHolder fileHolder) {
         if (s3 == null) {
 
             s3 = AmazonS3ClientBuilder
                     .standard()
-                    .withRegion(region)
+                    .withRegion(Regions.EU_WEST_2)
                     .build();
         }
 
-        this.upload = upload;
+        this.fileHolder = fileHolder;
     }
-
-//    @Override
-//    protected Void call() throws Exception {
-//        uploadFile();
-//        return null;
-//    }
 
     @Override
-    public void run() {
-        uploadFile();
-    }
-
-    // Needs to upload a photo and return some sort of reference (a url?)
-    private void uploadFile() {
-        System.out.println("Upload file method beginning thread: " + Thread.currentThread().getName());
+    public void copyFile() {
+        Objects.requireNonNull(fileHolder.getFile(), "File was null");
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
+        System.out.println("Upload fileHolder method beginning thread: " + Thread.currentThread().getName());
         System.out.println("request created");
-            PutObjectRequest request = new PutObjectRequest(upload.getBucket(), upload.getKey(), upload.getFile());
+            PutObjectRequest request = new PutObjectRequest(fileHolder.getBucket(), fileHolder.getKey(), fileHolder.getFile());
             request.setGeneralProgressListener((progressEvent) -> {
 
-//                ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(upload, progressEvent.getBytesTransferred());
+//                ProgressUpdateNotifier notifier = new ProgressUpdateNotifier(fileHolder, progressEvent.getBytesTransferred());
 //                Platform.runLater(notifier);
 
 //                System.out.println("PROGRESS: " + progressEvent);
@@ -59,12 +51,12 @@ class S3Connection implements Runnable {
                     || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT
                     || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT) {
 
-                    upload.onUploadFailure(progressEvent.toString());
+                    fileHolder.onUploadFailure(progressEvent.toString());
                 } else {
-                    upload.onBytesUploaded(progressEvent.getBytesTransferred());
+                    fileHolder.onBytesUploaded(progressEvent.getBytesTransferred());
                 }
 
-//                upload.setUploadCompletionListener((upload) -> {
+//                fileHolder.setUploadCompletionListener((fileHolder) -> {
 //                    System.out.println("S3 shutdown");
 //                    s3.shutdown();
 //                });
@@ -72,14 +64,27 @@ class S3Connection implements Runnable {
                 // FIXME: 16/07/18 Am I creating a million executors ?? - run with visual VM
             });
 
-
-
             s3.putObject(request);
     }
 
-    private void removeFile() {
-        DeleteObjectRequest request= new DeleteObjectRequest(upload.getBucket(), upload.getKey());
-//        request.setGeneralProgressListener();
+    // TODO: 24/07/18 Test file removal and wire up with db fail
+
+    @Override
+    public void removeFile() {
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
+        DeleteObjectRequest request= new DeleteObjectRequest(bucket, key);
+        request.setGeneralProgressListener((progressEvent) -> {
+            boolean done = progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT;
+            if (done) fileHolder.onRemoveSuccess();
+            else {
+
+                boolean error = progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT
+                             || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT
+                             || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT;
+                if (error) fileHolder.onRemoveFailure(progressEvent.toString());
+            }
+        });
         s3.deleteObject(request);
     }
 }

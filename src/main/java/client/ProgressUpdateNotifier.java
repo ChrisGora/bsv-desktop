@@ -1,14 +1,12 @@
 package client;
 
-import javafx.concurrent.Task;
-
 public class ProgressUpdateNotifier implements Runnable {
 
-    private UploadHolder uploadHolder;
+    private FileHolder fileHolder;
     private long bytesTransfered;
 
-    public ProgressUpdateNotifier(UploadHolder uploadHolder, long bytesTransfered) {
-        this.uploadHolder = uploadHolder;
+    public ProgressUpdateNotifier(FileHolder fileHolder, long bytesTransfered) {
+        this.fileHolder = fileHolder;
         this.bytesTransfered = bytesTransfered;
     }
 
@@ -19,6 +17,6 @@ public class ProgressUpdateNotifier implements Runnable {
 
     @Override
     public void run() {
-        uploadHolder.onBytesUploaded(bytesTransfered);
+        fileHolder.onBytesUploaded(bytesTransfered);
     }
 }

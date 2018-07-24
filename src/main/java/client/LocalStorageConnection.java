@@ -3,32 +3,26 @@ package client;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
-public class LocalStorageConnection implements Runnable {
+public class LocalStorageConnection implements StorageConnection {
 
-    private UploadHolder uploadHolder;
+    private FileHolder fileHolder;
 
-    public LocalStorageConnection(UploadHolder uploadHolder) {
-        this.uploadHolder = uploadHolder;
+    public LocalStorageConnection(FileHolder fileHolder) {
+        this.fileHolder = fileHolder;
     }
-
-//    @Override
-//    protected Void call() throws Exception {
-//        copyFile();
-//        return null;
-//    }
-
 
     @Override
-    public void run() {
-        copyFile();
-    }
+    public void copyFile() {
+        Objects.requireNonNull(fileHolder.getFile(), "File was null");
+        String source = fileHolder.getFile().getPath();
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
 
-    private void copyFile() {
-        String source = uploadHolder.getFile().getPath();
-//        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        Path destinationPath = Paths.get(System.getProperty("user.home"), "bsv_photos", uploadHolder.getKey());
+        Path destinationPath = Paths.get(System.getProperty("user.home"), bucket, key);
         String destination = destinationPath.toString();
+
         File file = new File(destination);
 
         boolean createFileSuccessful = false;
@@ -44,16 +38,16 @@ public class LocalStorageConnection implements Runnable {
             if (mkdirSuccessful && !file.exists()) {
                 createFileSuccessful = file.createNewFile();
             } else if (file.exists()){
-                uploadHolder.onUploadFailure("Duplicate filename");
+                fileHolder.onUploadFailure("Duplicate filename");
                 return;
             } else {
-                uploadHolder.onUploadFailure("Unknown error due to directory or empty file creation");
+                fileHolder.onUploadFailure("Unknown error due to directory or empty file creation");
                 return;
             }
 
         } catch (IOException e) {
             e.printStackTrace();
-            uploadHolder.onUploadFailure(e.toString());
+            fileHolder.onUploadFailure(e.toString());
         }
 
         System.out.println(">>>>>>>>>>> DESTINATION: " + destination);
@@ -65,16 +59,36 @@ public class LocalStorageConnection implements Runnable {
                 int length;
                 while ((length = in.read(buffer)) > 0) {
                     out.write(buffer, 0, length);
-                    uploadHolder.onBytesUploaded(length);
+                    fileHolder.onBytesUploaded(length);
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
-                uploadHolder.onUploadFailure(e.toString());
+                fileHolder.onUploadFailure(e.toString());
             }
 
         }
+    }
 
+    @Override
+    public void removeFile() {
 
+        Objects.requireNonNull(fileHolder.getFile(), "File was null");
+//        String source = fileHolder.getFile().getPath();
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
+
+        Path filePath = Paths.get(System.getProperty("user.home"), bucket, key);
+        String filePathString = filePath.toString();
+
+        File file = new File(filePathString);
+
+        if (file.exists()) {
+            boolean successful = file.delete();
+            if (successful) fileHolder.onRemoveSuccess();
+            else fileHolder.onRemoveFailure("Remove not successful");
+        } else {
+            fileHolder.onRemoveFailure("File does not exist");
+        }
     }
 }

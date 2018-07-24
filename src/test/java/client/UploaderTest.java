@@ -14,12 +14,12 @@ public class UploaderTest {
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
         Uploader uploader = new Uploader();
-        UploadHolder upload = uploader.newUploadHolder(file);
+        FileHolder upload = uploader.newUploadHolder(file);
         upload.setProgressListener(this::onProgressUpdated);
 
         CompletionObserver completionObserver = new CompletionObserver() {
             @Override
-            public void onDone(UploadHolder uploadHolder) {
+            public void onDone(FileHolder uploadHolder) {
                 synchronized (this) {
                     onCompleted(uploadHolder);
                     notifyAll();
@@ -51,9 +51,9 @@ public class UploaderTest {
         System.out.println("PROGRESS: " + progress);
     }
 
-    private void onCompleted(UploadHolder uploadHolder) {
+    private void onCompleted(FileHolder fileHolder) {
 //        synchronized ()
-        System.out.println("DONE: " + uploadHolder.getKey());
+        System.out.println("DONE: " + fileHolder.getKey());
     }
 
     private void onFailure(String error) {

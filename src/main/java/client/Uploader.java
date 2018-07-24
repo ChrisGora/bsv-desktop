@@ -29,16 +29,13 @@ public class Uploader {
 //        s3Connection.listBuckets();
 //    }
 
-    public UploadHolder newUploadHolder(File file) {
-        UploadHolder uploadHolder = new UploadHolder();
-        uploadHolder.setFile(file);
-        return uploadHolder;
+    public FileHolder newUploadHolder(File file) {
+        FileHolder fileHolder = new FileHolder();
+        fileHolder.setFile(file);
+        return fileHolder;
     }
 
-
-    // TODO: 23/07/18 Change the signature: void upload(UploadHolder)
-
-    public void upload(UploadHolder upload) {
+    public void upload(FileHolder upload) {
         String id = null;
 
         ImageMetadata metadata = null;
@@ -50,7 +47,7 @@ public class Uploader {
             return;
         }
 
-//        UploadHolder upload = new UploadHolder();
+//        FileHolder upload = new FileHolder();
 //        upload.setFile(file);
         upload.setMetadata(metadata);
 
@@ -76,11 +73,11 @@ public class Uploader {
         upload.setKey(key);
         upload.setBucket(BUCKET);
 
-//        Runnable storageConnection = new S3Connection(Regions.EU_WEST_2, upload);
-        Runnable storageConnection = new LocalStorageConnection(upload);
+//        Runnable storageConnection = new S3Connection(upload);
+        StorageConnection storageConnection = new LocalStorageConnection(upload);
 
 //        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(storageConnection);
+        executor.submit(storageConnection::copyFile);
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
         upload.setUploadCompletionListener(this::updateDatabase);
@@ -88,7 +85,7 @@ public class Uploader {
 //        return upload;
     }
 
-    private void updateDatabase(UploadHolder upload) {  // TODO: 19/07/18 Supply the database with the metadata
+    private void updateDatabase(FileHolder upload) {
 
         LocalDateTime localDateTime = LocalDateTime.now();
 

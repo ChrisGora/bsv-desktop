@@ -83,7 +83,7 @@ public class Main extends Application {
 
     private void handleFile(Stage primaryStage, File file) {
         if (file != null) {
-            UploadHolder upload = uploader.newUploadHolder(file);
+            FileHolder upload = uploader.newUploadHolder(file);
             if (upload != null) {
                 showUploadProgress(primaryStage, upload);
                 uploader.upload(upload);
@@ -128,7 +128,7 @@ public class Main extends Application {
     }
 
 
-    private void showUploadProgress(Stage primaryStage, UploadHolder uploadStatus) {
+    private void showUploadProgress(Stage primaryStage, FileHolder uploadStatus) {
         filesSubmitted++;
 
         String filenameString = uploadStatus.getFile().getName();
@@ -142,8 +142,7 @@ public class Main extends Application {
 
         GridPane.setConstraints(progressBar, 0, filesSubmitted);
         GridPane.setConstraints(filename, 1, filesSubmitted);
-        GridPane.setConstraints(copyStatus, 2, filesSubmitted);
-        GridPane.setConstraints(dbStatus, 3, filesSubmitted);
+     GridPane.setConstraints(dbStatus, 3, filesSubmitted);
 
 //        Button cancelButton
 
