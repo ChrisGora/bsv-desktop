@@ -2,11 +2,18 @@ package client;
 
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
+import io.jenetics.jpx.GPX;
+import io.jenetics.jpx.WayPoint;
 import org.apache.commons.imaging.ImageReadException;
 
+import javax.swing.text.Segment;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,20 +21,17 @@ import java.util.concurrent.Executors;
 public class Uploader {
 
     private static final String BUCKET = "bristol-streetview-photos";
-
     private ExecutorService executor;
+    private List<FileHolder> doneUploads;
 
     Uploader() {
         this.executor = Executors.newFixedThreadPool(2);
+        this.doneUploads = new ArrayList<>();
     }
 
     public void stop() {
         executor.shutdown();
     }
-
-//    public void test() {
-//        s3Connection.listBuckets();
-//    }
 
     public FileHolder newUploadHolder(File file) {
         FileHolder fileHolder = new FileHolder();
@@ -36,7 +40,6 @@ public class Uploader {
     }
 
     public void upload(FileHolder upload) {
-        String id = null;
 
         ImageMetadata metadata = null;
         try {
@@ -51,6 +54,7 @@ public class Uploader {
 //        upload.setFile(file);
         upload.setMetadata(metadata);
 
+        String id = null;
         id = metadata.getId();
 
 
@@ -81,7 +85,7 @@ public class Uploader {
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
         upload.setUploadCompletionListener(this::updateDatabase);
-
+        upload.setUploadCompletionListener(doneUploads::add);
 //        return upload;
     }
 
@@ -125,6 +129,28 @@ public class Uploader {
                 upload.onDbFailure(e.toString());
             }
         });
+    }
+
+    private void saveJustUploadedAsNewRoute(int routeId) {
+//        WayPoint wayPoint = WayPoint.builder().lon(12.00).lat(13.00).build();
+
+        List<WayPoint> wayPoints = new ArrayList<>();
+
+        for (FileHolder fileHolder : doneUploads) {
+            double longitude = fileHolder.getMetadata().getLongitude();
+            double latitude = fileHolder.getMetadata().getLongitude();
+            Instant instant = fileHolder.getMetadata().getPhotoDateTime().toInstant(ZoneOffset.ofTotalSeconds(0));
+            WayPoint wayPoint = WayPoint.builder().lon(longitude).lat(latitude).time(instant).build();
+        }
+
+        GPX gpx = GPX.builder()
+                .addTrack(t -> t
+                .addSegment(s -> wayPoints.forEach(s::addPoint)))
+                .build();
+
+        // TODO: 30/07/18 Write the GPX file in the appropriate file store - Amazon or Local storage - but needs to be decided by THE STORAGE CLASS
+
+//        GPX.write(gpx);
     }
 
 }

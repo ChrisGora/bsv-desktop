@@ -98,6 +98,12 @@
             <version>25.1-jre</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.jenetics</groupId>
+            <artifactId>jpx</artifactId>
+            <version>1.3.0</version>
+        </dependency>
+
     </dependencies>
 
 
