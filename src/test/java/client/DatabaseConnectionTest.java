@@ -51,7 +51,8 @@ public class DatabaseConnectionTest {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll();
             connectionTest();
-            db.getPhoto("1234567");
+            String path = db.getPath("1234567");
+            Assert.assertEquals("Wrong path", "test-bucket/test-key", path);
         } catch (Exception e) {
             e.printStackTrace();
         }

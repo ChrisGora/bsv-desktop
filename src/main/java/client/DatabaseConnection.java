@@ -164,27 +164,38 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
-    public Path getPhoto(String id) throws SQLException {
+    public String getPath(String id) throws SQLException {
         String sql = "SELECT bucketName, fileKey FROM Photo " +
                 "WHERE (id = ?);";
+
+        String bucket = null;
+        String key = null;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, id);
             ResultSet results = statement.executeQuery();
 
-            while (results.next()) {
-                String bucket = results.getString("bucketName");
-                String key = results.getString("fileKey");
+            int n = results.getFetchSize();
+            System.out.println("FETCH SIZE: " + n);
+
+//            while (results.next()) {
+                results.first();
+                bucket = results.getString("bucketName");
+                key = results.getString("fileKey");
                 System.out.println(bucket);
                 System.out.println(key);
+//            }
 
-            }
+
+
 
         }
 
 //        System.out.println("GETPHOTO RESULT: " + n);
 
-        return null;
+        String path = Objects.requireNonNull(bucket, "Bucket was null")+ "/" + Objects.requireNonNull(key, "Key was null");
+        System.out.println(path);
+        return path;
     }
 
 //    public List<String> getKeysWithExactMatch(double longitude, double latitude) {
