@@ -13,7 +13,7 @@ public class UploaderTest {
         ClassLoader classLoader = getClass().getClassLoader();
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
-        Uploader uploader = new Uploader();
+        Uploader uploader = new Uploader(StorageType.AMAZON);
         FileHolder upload = uploader.newUploadHolder(file);
         upload.setProgressListener(this::onProgressUpdated);
 

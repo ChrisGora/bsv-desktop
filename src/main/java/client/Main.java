@@ -33,14 +33,15 @@ public class Main extends Application {
     }
 
     public void start(Stage primaryStage) throws Exception {
-        this.uploader = new Uploader();
+        this.uploader = new Uploader(StorageType.LOCAL);
         FileChooser fileChooser = new FileChooser();
 
         primaryStage.setTitle("Database client");
 
-        Button singleFileButton = getSingleFileButton(primaryStage, fileChooser);
-        Button multipleFilesButton = getMultipleFilesButton(primaryStage, fileChooser);
-        Button photoUploadButton = get360PhotoUploadButton(primaryStage, fileChooser);
+        Button singleFileButton = getSingleFileButton(0, 0, primaryStage, fileChooser);
+        Button multipleFilesButton = getMultipleFilesButton(1, 0, primaryStage, fileChooser);
+        Button photoUploadButton = get360PhotoUploadButton(2, 0, primaryStage, fileChooser);
+        Button newRouteButton = getNewRouteButton(3, 0, primaryStage);
 
         GridPane mainGrid = new GridPane();
 
@@ -58,7 +59,7 @@ public class Main extends Application {
         mainGrid.setHgap(6);
         mainGrid.setVgap(6);
 //        mainGrid.getChildren().addAll(singleFileButton, multipleFilesButton);
-        mainGrid.getChildren().addAll(singleFileButton, multipleFilesButton, photoUploadButton);
+        mainGrid.getChildren().addAll(singleFileButton, multipleFilesButton, photoUploadButton, newRouteButton);
 
         this.rootGroup = new VBox(12);
         rootGroup.getChildren().addAll(mainGrid, scrollPane);
@@ -68,9 +69,9 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    private Button getSingleFileButton(Stage primaryStage, FileChooser fileChooser) {
+    private Button getSingleFileButton(int col, int row, Stage primaryStage, FileChooser fileChooser) {
         Button singleFileButton = new Button();
-        GridPane.setConstraints(singleFileButton, 0, 0);
+        GridPane.setConstraints(singleFileButton, col, row);
 
         singleFileButton.setText("Upload file");
         singleFileButton.setOnAction((event) -> {
@@ -91,9 +92,9 @@ public class Main extends Application {
         }
     }
 
-    private Button getMultipleFilesButton(Stage primaryStage, FileChooser fileChooser) {
+    private Button getMultipleFilesButton(int col, int row, Stage primaryStage, FileChooser fileChooser) {
         Button multipleFilesButton = new Button();
-        GridPane.setConstraints(multipleFilesButton, 1, 0);
+        GridPane.setConstraints(multipleFilesButton, col, row);
 
         multipleFilesButton.setText("Upload multiple files");
         multipleFilesButton.setOnAction((event) -> {
@@ -108,9 +109,9 @@ public class Main extends Application {
         return multipleFilesButton;
     }
 
-    private Button get360PhotoUploadButton(Stage primaryStage, FileChooser fileChooser) {
+    private Button get360PhotoUploadButton(int col, int row, Stage primaryStage, FileChooser fileChooser) {
         Button photoUploadButton = new Button();
-        GridPane.setConstraints(photoUploadButton, 2, 0);
+        GridPane.setConstraints(photoUploadButton, col, row);
 
         photoUploadButton.setText("Upload 360 photos");
         photoUploadButton.setOnAction((event) -> {
@@ -125,6 +126,15 @@ public class Main extends Application {
             }
         });
         return photoUploadButton;
+    }
+
+    private Button getNewRouteButton(int col, int row, Stage primaryStage) {
+        Button newRouteButton = new Button();
+        GridPane.setConstraints(newRouteButton, col, row);
+
+        newRouteButton.setText("Save as new route");
+        newRouteButton.setOnAction((event) -> uploader.saveJustUploadedAsNewRoute(2));
+        return newRouteButton;
     }
 
 
@@ -147,42 +157,29 @@ public class Main extends Application {
 
 //        Button cancelButton
 
-        uploadStatus.setProgressListener((progress) -> {
-            Platform.runLater(() -> {
-                progressBar.setProgress(progress);
-//                progressBar.setStyle("-fx-accent: yellow;");
-                copyStatus.setText("UPLOAD IN PROGRESS...");
-            });
-        });
+        uploadStatus.setProgressListener((progress) -> Platform.runLater(() -> {
+            progressBar.setProgress(progress);
+            copyStatus.setText("UPLOAD IN PROGRESS...");
+        }));
 
-        uploadStatus.setUploadCompletionListener((upload) -> {
-            Platform.runLater(() -> {
-                progressBar.setStyle("-fx-accent: green;");
-                copyStatus.setText("UPLOAD SUCCESSFUL");
-//                progressGrid.getChildren().remove(progressBar);
-            });
+        uploadStatus.setUploadCompletionListener((upload) -> Platform.runLater(() -> {
+            progressBar.setStyle("-fx-accent: green;");
+            copyStatus.setText("UPLOAD SUCCESSFUL");
+        }));
 
-        });
+        uploadStatus.setUploadFailureListener((error) -> Platform.runLater(() -> {
+            progressBar.setStyle("-fx-accent: red;");
+            copyStatus.setText("UPLOAD ERROR >>> " + error);
+        }));
 
-        uploadStatus.setUploadFailureListener((error) -> {
-            Platform.runLater(() -> {
-                progressBar.setStyle("-fx-accent: red;");
-                copyStatus.setText("UPLOAD ERROR >>> " + error);
-            });
-        });
+        uploadStatus.setDbUpdateCompletionListener((uploadHolder) -> Platform.runLater(() -> {
+            dbStatus.setText("DATABASE UPDATE OK");
+        }));
 
-        uploadStatus.setDbUpdateCompletionListener((uploadHolder) -> {
-            Platform.runLater(() -> {
-                dbStatus.setText("DATABASE UPDATE OK");
-            });
-        });
-
-        uploadStatus.setDbFailureListener((error) -> {
-            Platform.runLater(() -> {
-                progressBar.setStyle("-fx-accent: red;");
-                dbStatus.setText("DATABASE ERROR " + error);
-            });
-        });
+        uploadStatus.setDbFailureListener((error) -> Platform.runLater(() -> {
+            progressBar.setStyle("-fx-accent: red;");
+            dbStatus.setText("DATABASE ERROR " + error);
+        }));
 
         progressGrid.getChildren().addAll(progressBar, filename, copyStatus, dbStatus);
     }
