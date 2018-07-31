@@ -220,4 +220,12 @@ public class Uploader {
         }
     }
 
+    public void deleteAll() {
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            db.deleteAll();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
