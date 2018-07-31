@@ -36,7 +36,7 @@ public class Uploader {
         this.type = type;
     }
 
-    StorageConnection getStorageConnection(FileHolder fileHolder) {
+    private StorageConnection getStorageConnection(FileHolder fileHolder) {
         switch (type) {
             case AMAZON:
                 return new S3Connection(fileHolder);
@@ -114,12 +114,12 @@ public class Uploader {
         LocalDateTime localDateTime = LocalDateTime.now();
 
         executor.submit(() -> {
-            try (DatabaseConnection rds = new DatabaseConnection()) {
-                System.out.println("Uploader established an RDS connection");
+            try (DatabaseConnection db = new DatabaseConnection()) {
+                System.out.println("Uploader established a DB connection");
 //            System.out.println(upload.getBucket());
 //            System.out.println(upload.getKey());
                 ImageMetadata metadata = upload.getMetadata();
-                int result = rds.insertPhotoRow(
+                int result = db.insertPhotoRow(
                         metadata.getId(),
                         metadata.getHeight(),
                         metadata.getWidth(),
@@ -218,7 +218,6 @@ public class Uploader {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
 }

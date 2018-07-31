@@ -2,6 +2,7 @@ package client;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
+import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -10,6 +11,8 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -19,6 +22,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -121,12 +125,12 @@ class DatabaseConnection implements AutoCloseable {
                        Double longitude,
                        String cameraSerialNumber,
                        int routeId,
-                       String s3BucketName,
-                       String s3Key
+                       String bucketName,
+                       String key
     ) throws SQLException {
 
         String sql = "INSERT INTO Photo " +
-                "(id, height, width, photoTimestamp, uploadTimestamp, latitude, longitude, cameraSerialNumber, routeId, s3BucketName, s3Key) " +
+                "(id, height, width, photoTimestamp, uploadTimestamp, latitude, longitude, cameraSerialNumber, routeId, bucketName, fileKey) " +
                 "VALUES " +
                 "(?,?,?,?,?,?,?,?,?,?,?)";
 
@@ -146,25 +150,70 @@ class DatabaseConnection implements AutoCloseable {
             statement.setDouble(7, longitude);
             statement.setString(8, cameraSerialNumber);
             statement.setInt(9, routeId);
-            statement.setString(10, s3BucketName);
-            statement.setString(11, s3Key);
+            statement.setString(10, bucketName);
+            statement.setString(11, key);
 
             n = statement.executeUpdate();
-            System.out.println("INSERT RESULT: " + n);
 
 //        } catch (SQLException e) {
 //            e.printStackTrace();
         }
 
+        System.out.println("INSERT RESULT: " + n);
         return  n;
-
 
     }
 
-//    private int executeSqlUpdate(String sql) {
+    public Path getPhoto(String id) throws SQLException {
+        String sql = "SELECT bucketName, fileKey FROM Photo " +
+                "WHERE (id = ?);";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, id);
+            ResultSet results = statement.executeQuery();
+
+            while (results.next()) {
+                String bucket = results.getString("bucketName");
+                String key = results.getString("fileKey");
+                System.out.println(bucket);
+                System.out.println(key);
+
+            }
+
+        }
+
+//        System.out.println("GETPHOTO RESULT: " + n);
+
+        return null;
+    }
+
+//    public List<String> getKeysWithExactMatch(double longitude, double latitude) {
 //
 //    }
+//
+//    public List<String> getKeysWithExactMatch(LocalDateTime dateTime) {
+//
+//    }
+//
+//    public List<String> getKeysWithExactMatch(LocalDateTime dateTime) {
+//
+//    }
+//
+//    public List<String> getKeysClosestTo(double longitude, double latitude) {
+//
+//    }
+//
 
+
+    public void deleteAll() {
+        String sql = "TRUNCATE TABLE Photo;";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.execute();
+            System.out.println("DELETE ALL: Done");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     //------------------------------------------------------------------------------------------------------------------
 
