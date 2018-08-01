@@ -15,7 +15,7 @@ public class UploaderTest {
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
-        Uploader uploader = new Uploader(StorageType.AMAZON);
+        Uploader uploader = new Uploader(StorageType.AMAZON, "bristol-streetview-photos");
         FileHolder upload = uploader.newUploadHolder(file);
         upload.setProgressListener(this::onProgressUpdated);
 
@@ -60,7 +60,7 @@ public class UploaderTest {
 
         File[] files = folder.listFiles();
 
-        Uploader uploader = new Uploader(StorageType.LOCAL);
+        Uploader uploader = new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
         uploader.deleteAll();
 
         for (File file : Objects.requireNonNull(files, "Files were null")) {

@@ -33,7 +33,7 @@ public class Main extends Application {
     }
 
     public void start(Stage primaryStage) throws Exception {
-        this.uploader = new Uploader(StorageType.LOCAL);
+        this.uploader = new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
         FileChooser fileChooser = new FileChooser();
 
         primaryStage.setTitle("Database client");

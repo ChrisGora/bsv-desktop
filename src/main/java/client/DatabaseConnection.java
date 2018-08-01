@@ -2,17 +2,13 @@ package client;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
-import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -22,6 +18,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -96,13 +93,9 @@ class DatabaseConnection implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        try {
-            this.connection.close();
-            System.out.println("DB Connection closed");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public void close() throws SQLException {
+        this.connection.close();
+        System.out.println("DB Connection closed");
     }
 
     private Properties newMySqlProperties() {
@@ -164,7 +157,7 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
-    public String getPath(String id) throws SQLException {
+    public FilePath getPath(String id) throws SQLException {
         String sql = "SELECT bucketName, fileKey FROM Photo " +
                 "WHERE (id = ?);";
 
@@ -187,24 +180,51 @@ class DatabaseConnection implements AutoCloseable {
 //            }
         }
 
-        String path = Objects.requireNonNull(bucket, "Bucket was null")+ "/" + Objects.requireNonNull(key, "Key was null");
-        System.out.println(path);
-        return path;
+        if (bucket == null || key == null) {
+            throw new SQLException("Bucket or key was null");
+        } else {
+            FilePath filePath = new FilePath();
+            filePath.setBucket(bucket);
+            filePath.setKey(key);
+            return filePath;
+        }
+
     }
 
-//    public List<String> getKeysWithExactMatch(double longitude, double latitude) {
+    public List<String> getPhotosWithExactMatch(double longitude, double latitude) throws SQLException {
+        String sql = "SELECT id FROM Photo" +
+                "WHERE longitude = ?" +
+                "AND latitude = ?;";
+
+        List<String> photoIds = new ArrayList<>();
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setDouble(1, longitude);
+            statement.setDouble(2, latitude);
+
+            ResultSet results = statement.executeQuery();
+
+            while (results.next()) {
+                photoIds.add(results.getString(1));
+            }
+
+        }
+
+        return photoIds;
+
+    }
+//
+//    Time of photo being taken:
+//    public List<String> getPhotosWithExactMatch(LocalDateTime dateTime) {
 //
 //    }
 //
-//    public List<String> getKeysWithExactMatch(LocalDateTime dateTime) {
+//    Time of photo uploaded:
+//    public List<String> getPhotosWithExactMatch(LocalDateTime dateTime) {
 //
 //    }
 //
-//    public List<String> getKeysWithExactMatch(LocalDateTime dateTime) {
-//
-//    }
-//
-//    public List<String> getKeysClosestTo(double longitude, double latitude) {
+//    public List<String> getPhotosClosestTo(double longitude, double latitude) {
 //
 //    }
 //

@@ -8,6 +8,7 @@ import org.apache.commons.imaging.ImageReadException;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -16,23 +17,23 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Uploader {
 
-    private static final String BUCKET = "bristol-streetview-photos";
+    private String bucket;
 
     private StorageType type;
     private ExecutorService executor;
     private StorageConnection storageConnection;
     private List<FileHolder> doneUploads;
 
-    Uploader(StorageType type) {
+    Uploader(StorageType type, String bucket) {
 //        this.executor = Executors.newFixedThreadPool(2);
         this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
         this.doneUploads = new ArrayList<>();
         this.type = type;
+        this.bucket = bucket;
     }
 
     private StorageConnection getStorageConnection(FileHolder fileHolder) {
@@ -94,7 +95,7 @@ public class Uploader {
         System.out.println(key);
 
         upload.setKey(key);
-        upload.setBucket(BUCKET);
+        upload.setBucket(bucket);
 
 //        Runnable storageConnection = new S3Connection(upload);
         StorageConnection storageConnection = getStorageConnection(upload);
@@ -197,7 +198,7 @@ public class Uploader {
             GPX.write(gpx, tempFile.getPath());
             FileHolder fileHolder = new FileHolder();
             fileHolder.setFile(tempFile);
-            fileHolder.setBucket(BUCKET);
+            fileHolder.setBucket(bucket);
             fileHolder.setKey("GPX_" + routeId + "_" + UUID.randomUUID().toString().replace("-", "") + ".gpx");
 
             fileHolder.setUploadCompletionListener(f -> {
@@ -222,7 +223,7 @@ public class Uploader {
     public void deleteAll() {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }

@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.Assert;
 
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 
 public class DatabaseConnectionTest {
@@ -47,14 +48,28 @@ public class DatabaseConnectionTest {
     }
 
     @Test
-    public void getPhotoTest() {
+    public void getPhotoTest() throws SQLException {
+        FilePath path = null;
+
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll();
             connectionTest();
-            String path = db.getPath("1234567");
-            Assert.assertEquals("Wrong path", "test-bucket/test-key", path);
-        } catch (Exception e) {
-            e.printStackTrace();
+            path = db.getPath("1234567");
         }
+        Assert.assertEquals("Wrong bucket", "test-bucket", path.getBucket());
+        Assert.assertEquals("Wrong key", "test-key", path.getKey());
+    }
+
+    @Test (expected = SQLException.class)
+    public void getPhotoNoMatchTest() throws SQLException {
+        FilePath path = null;
+
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            db.deleteAll();
+            connectionTest();
+            path = db.getPath("1234");
+        }
+        Assert.assertEquals("Wrong bucket", "test-bucket", path.getBucket());
+        Assert.assertEquals("Wrong key", "test-key", path.getKey());
     }
 }

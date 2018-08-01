@@ -1,6 +1,8 @@
 package client;
 
-public class Path {
+import java.util.Objects;
+
+public class FilePath {
     private String bucket;
     private String key;
 
@@ -9,7 +11,7 @@ public class Path {
     }
 
     public void setBucket(String bucket) {
-        this.bucket = bucket;
+        this.bucket = Objects.requireNonNull(bucket, "Bucket was null");
     }
 
     public String getKey() {
@@ -17,7 +19,7 @@ public class Path {
     }
 
     public void setKey(String key) {
-        this.key = key;
+        this.key = Objects.requireNonNull(key, "Key was null");
     }
 
     public String getPath() {
