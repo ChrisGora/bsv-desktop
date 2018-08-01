@@ -185,13 +185,7 @@ class DatabaseConnection implements AutoCloseable {
                 System.out.println(bucket);
                 System.out.println(key);
 //            }
-
-
-
-
         }
-
-//        System.out.println("GETPHOTO RESULT: " + n);
 
         String path = Objects.requireNonNull(bucket, "Bucket was null")+ "/" + Objects.requireNonNull(key, "Key was null");
         System.out.println(path);

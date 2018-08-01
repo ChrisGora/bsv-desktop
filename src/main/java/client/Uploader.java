@@ -6,7 +6,6 @@ import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.WayPoint;
 import org.apache.commons.imaging.ImageReadException;
 
-import javax.swing.text.Segment;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
@@ -30,7 +29,7 @@ public class Uploader {
     private List<FileHolder> doneUploads;
 
     Uploader(StorageType type) {
-        this.executor = Executors.newFixedThreadPool(2);
+//        this.executor = Executors.newFixedThreadPool(2);
         this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
         this.doneUploads = new ArrayList<>();
         this.type = type;
