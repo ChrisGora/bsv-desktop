@@ -191,7 +191,7 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
-    public List<String> getPhotosWithExactMatch(double latitude, double longitude) throws SQLException {
+    public List<String> getPhotosWithExactGpsMatch(double latitude, double longitude) throws SQLException {
         String sql =    "SELECT id FROM Photo " +
                         "WHERE latitude = ? " +
                         "AND longitude = ?;";
@@ -216,18 +216,34 @@ class DatabaseConnection implements AutoCloseable {
         }
         return photoIds;
     }
-//
+
 //    Time of photo being taken:
-//    public List<String> getPhotosWithExactMatch(LocalDateTime dateTime) {
-//
-//    }
-//
+    public List<String> getPhotosWithExactDateTakenMatch(LocalDateTime dateTime) throws SQLException {
+        String sql =    "SELECT id FROM Photo " +
+                        "WHERE photoTimestamp = ?;";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setTimestamp(1, Timestamp.valueOf(dateTime));
+
+            ResultSet results = statement.executeQuery();
+
+
+
+        }
+    }
+
+    public List<String> getPhotosTakenBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
+
+    }
+
 //    Time of photo uploaded:
-//    public List<String> getPhotosWithExactMatch(LocalDateTime dateTime) {
+//    public List<String> getPhotosWithExactUploadDateMatch(LocalDateTime dateTime) {
 //
 //    }
+
+
 //
-//    public List<String> getPhotosClosestTo(double longitude, double latitude) {
+//    public List<String> getPhotosAround(double latitude, double longitude, double latitudeDelta, double longitudeDelta) {
 //
 //    }
 //

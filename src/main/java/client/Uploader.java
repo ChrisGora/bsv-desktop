@@ -165,41 +165,22 @@ public class Uploader {
     }
 
     public void saveJustUploadedAsNewRoute(int routeId) {
-//        WayPoint wayPoint = WayPoint.builder().lon(12.00).lat(13.00).build();
 
-        System.out.println("HERE!!!");
-
-        List<WayPoint> wayPoints = new ArrayList<>();
-
-        System.out.println("done size: " + doneUploads.size());
-
-        for (FileHolder fileHolder : doneUploads) {
-            double longitude = fileHolder.getMetadata().getLongitude();
-            double latitude = fileHolder.getMetadata().getLatitude();
-            Instant instant = fileHolder.getMetadata().getPhotoDateTime().toInstant(ZoneOffset.ofTotalSeconds(0));
-            WayPoint wayPoint = WayPoint.builder().lon(longitude).lat(latitude).time(instant).build();
-            wayPoints.add(wayPoint);
-        }
+        List<WayPoint> wayPoints = getWayPoints();
+        GPX gpx = getGpx(wayPoints);
 
         System.out.println("Waypoints size: " + wayPoints.size());
-
-        GPX gpx = GPX.builder()
-                .addTrack(t -> t
-                .addSegment(s -> wayPoints.forEach(s::addPoint)))
-                .build();
-
         System.out.println("builder done");
+        uploadGpx(routeId, gpx);
+    }
 
-        // TODO: 30/07/18 Write the GPX file in the appropriate file store - Amazon or Local storage - but needs to be decided by THE STORAGE CLASS
-
+    private void uploadGpx(int routeId, GPX gpx) {
         try {
             System.out.println("inside try");
             File tempFile = File.createTempFile("JPX" + routeId, ".gpx");
             GPX.write(gpx, tempFile.getPath());
-            FileHolder fileHolder = new FileHolder();
-            fileHolder.setFile(tempFile);
-            fileHolder.setBucket(bucket);
-            fileHolder.setKey("GPX_" + routeId + "_" + UUID.randomUUID().toString().replace("-", "") + ".gpx");
+
+            FileHolder fileHolder = newGpxFileHolder(routeId, tempFile);
 
             fileHolder.setUploadCompletionListener(f -> {
                 System.out.println("GPX UPLOAD DONE!!!");
@@ -218,6 +199,36 @@ public class Uploader {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private FileHolder newGpxFileHolder(int routeId, File tempFile) {
+        FileHolder fileHolder = new FileHolder();
+        fileHolder.setFile(tempFile);
+        fileHolder.setBucket(bucket);
+        fileHolder.setKey("GPX_" + routeId + "_" + UUID.randomUUID().toString().replace("-", "") + ".gpx");
+        return fileHolder;
+    }
+
+    private GPX getGpx(List<WayPoint> wayPoints) {
+        return GPX.builder()
+                    .addTrack(t -> t
+                    .addSegment(s -> wayPoints.forEach(s::addPoint)))
+                    .build();
+    }
+
+    private List<WayPoint> getWayPoints() {
+        List<WayPoint> wayPoints = new ArrayList<>();
+
+        System.out.println("done size: " + doneUploads.size());
+
+        for (FileHolder fileHolder : doneUploads) {
+            double longitude = fileHolder.getMetadata().getLongitude();
+            double latitude = fileHolder.getMetadata().getLatitude();
+            Instant instant = fileHolder.getMetadata().getPhotoDateTime().toInstant(ZoneOffset.ofTotalSeconds(0));
+            WayPoint wayPoint = WayPoint.builder().lon(longitude).lat(latitude).time(instant).build();
+            wayPoints.add(wayPoint);
+        }
+        return wayPoints;
     }
 
     public void deleteAll() {

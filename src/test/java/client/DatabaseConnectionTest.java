@@ -83,7 +83,7 @@ public class DatabaseConnectionTest {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll();
             connectionTest();
-            ids = db.getPhotosWithExactMatch(123.34455, 4555.5600054);
+            ids = db.getPhotosWithExactGpsMatch(123.34455, 4555.5600054);
         }
 
         Assert.assertEquals("List must only have one element",1, ids.size());
@@ -101,7 +101,7 @@ public class DatabaseConnectionTest {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll();
             connectionTest();
-            ids = db.getPhotosWithExactMatch(123.3445, 4555.5600054);
+            ids = db.getPhotosWithExactGpsMatch(123.3445, 4555.5600054);
         }
 
 //        Assert.assertEquals("List must only have one element",1, ids.size());
