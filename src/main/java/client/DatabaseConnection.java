@@ -191,27 +191,30 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
-    public List<String> getPhotosWithExactMatch(double longitude, double latitude) throws SQLException {
-        String sql = "SELECT id FROM Photo" +
-                "WHERE longitude = ?" +
-                "AND latitude = ?;";
+    public List<String> getPhotosWithExactMatch(double latitude, double longitude) throws SQLException {
+        String sql =    "SELECT id FROM Photo " +
+                        "WHERE latitude = ? " +
+                        "AND longitude = ?;";
 
         List<String> photoIds = new ArrayList<>();
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setDouble(1, longitude);
-            statement.setDouble(2, latitude);
+            statement.setDouble(1, latitude);
+            statement.setDouble(2, longitude);
 
             ResultSet results = statement.executeQuery();
 
+            int n = 0;
             while (results.next()) {
                 photoIds.add(results.getString(1));
+                n++;
             }
 
+            if (n == 0) {
+                throw new SQLWarning("ResultSet was empty");
+            }
         }
-
         return photoIds;
-
     }
 //
 //    Time of photo being taken:
