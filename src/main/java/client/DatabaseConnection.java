@@ -191,7 +191,7 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
-    public List<String> getPhotosWithExactGpsMatch(double latitude, double longitude) throws SQLException {
+    public List<String> getPhotosTakenAt(double latitude, double longitude) throws SQLException {
         String sql =    "SELECT id FROM Photo " +
                         "WHERE latitude = ? " +
                         "AND longitude = ?;";
@@ -211,43 +211,80 @@ class DatabaseConnection implements AutoCloseable {
             }
 
             if (n == 0) {
-                throw new SQLWarning("ResultSet was empty");
+                throw new SQLException("ResultSet was empty");
             }
         }
         return photoIds;
     }
 
 //    Time of photo being taken:
-    public List<String> getPhotosWithExactDateTakenMatch(LocalDateTime dateTime) throws SQLException {
+    public List<String> getPhotosTakenOn(LocalDateTime dateTime) throws SQLException {
         String sql =    "SELECT id FROM Photo " +
                         "WHERE photoTimestamp = ?;";
 
+        List<String> photoIds = new ArrayList<>();
+        executeSqlWithOneDate(sql, dateTime, photoIds);
+        return photoIds;
+    }
+
+
+
+    public List<String> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
+        String sql =    "SELECT id FROM Photo " +
+                        "WHERE uploadTimestamp = ?;";
+
+        List<String> photoIds = new ArrayList<>();
+        executeSqlWithOneDate(sql, dateTime, photoIds);
+        return photoIds;
+    }
+
+    private void executeSqlWithOneDate(String sql, LocalDateTime dateTime, List<String> photoIds) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setTimestamp(1, Timestamp.valueOf(dateTime));
 
             ResultSet results = statement.executeQuery();
 
+            int n = 0;
+            while (results.next()) {
+                photoIds.add(results.getString(1));
+                n++;
+            }
 
-
+            if (n == 0) {
+                throw new SQLException("ResultSet was empty");
+            }
         }
     }
 
     public List<String> getPhotosTakenBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
-
+        return getPhotosBetween(date1, date2, "photoTimestamp");
     }
 
-//    Time of photo uploaded:
-//    public List<String> getPhotosWithExactUploadDateMatch(LocalDateTime dateTime) {
-//
-//    }
+    public List<String> getPhotosUploadedBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
+        return getPhotosBetween(date1, date2, "uploadTimestamp");
+    }
 
+    private List<String> getPhotosBetween(LocalDateTime date1, LocalDateTime date2, String where) throws SQLException {
+        String sql =    "SELECT id FROM Photo " +
+                        "WHERE " + where + " BETWEEN ? AND ?;";
+        List<String> photoIds = new ArrayList<>();
+        executeSqlWithTwoDates(sql, date1, date2, photoIds);
+        return photoIds;
+    }
 
-//
-//    public List<String> getPhotosAround(double latitude, double longitude, double latitudeDelta, double longitudeDelta) {
-//
-//    }
-//
+    private void executeSqlWithTwoDates(String sql, LocalDateTime dateTime1, LocalDateTime dateTime2, List<String> photoIds) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+//            statement.set(1, where);
+            statement.setTimestamp(1, Timestamp.valueOf(dateTime1));
+            statement.setTimestamp(2, Timestamp.valueOf(dateTime2));
 
+            ResultSet results = statement.executeQuery();
+
+            while (results.next()) {
+                photoIds.add(results.getString(1));
+            }
+        }
+    }
 
     public void deleteAll() {
         String sql = "TRUNCATE TABLE Photo;";
@@ -259,7 +296,12 @@ class DatabaseConnection implements AutoCloseable {
         }
     }
 
+    //    }
+    //
+    //
+    //    public List<String> getPhotosAround(double latitude, double longitude, double latitudeDelta, double longitudeDelta) {
     //------------------------------------------------------------------------------------------------------------------
+    //
 
     private void setSslProperties() throws IOException, CertificateException {
         System.setProperty("javax.net.ssl.trustStore", newKeyStoreFile().getPath());
