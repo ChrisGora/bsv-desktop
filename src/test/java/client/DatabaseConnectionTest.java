@@ -18,7 +18,7 @@ public class DatabaseConnectionTest {
     @Test
     public void singleInsertTest() {
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll("test-bucket");
             int result = db.insertPhotoRow(
                     "1234567",
                     1000,
@@ -44,7 +44,7 @@ public class DatabaseConnectionTest {
     public void multipleInsertTest() {
         singleInsertTest();
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll("test-bucket");
 
             int result = db.insertPhotoRow(
                     "1234567",
@@ -121,7 +121,7 @@ public class DatabaseConnectionTest {
         multipleInsertTest();
 
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll("test-bucket");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -131,10 +131,10 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotoTest() throws SQLException {
-        FilePath path = null;
+        FilePath path;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll("test-bucket");
             multipleInsertTest();
             path = db.getPath("1234570");
         }
@@ -147,7 +147,7 @@ public class DatabaseConnectionTest {
         FilePath path = null;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll("test-bucket");
             multipleInsertTest();
             path = db.getPath("1234");
         }
@@ -158,10 +158,10 @@ public class DatabaseConnectionTest {
     @Test
     public void getPhotoGPS() throws SQLException {
 
-        List<String> ids = new ArrayList<>();
+        List<String> ids;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll("test-bucket");
             multipleInsertTest();
             ids = db.getPhotosTakenAt(123.34455, 4555.5600054);
         }
@@ -186,7 +186,7 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotoDateTakenTest() throws SQLException {
-        List<String> ids = new ArrayList<>();
+        List<String> ids;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();

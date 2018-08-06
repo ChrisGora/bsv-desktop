@@ -84,7 +84,7 @@ public class Main extends Application {
 
     private void handleFile(Stage primaryStage, File file) {
         if (file != null) {
-            FileHolder upload = uploader.newUploadHolder(file);
+            FileHolder upload = uploader.newFileHolder(file);
             if (upload != null) {
                 showUploadProgress(primaryStage, upload);
                 uploader.upload(upload);

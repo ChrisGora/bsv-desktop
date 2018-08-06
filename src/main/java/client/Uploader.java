@@ -21,11 +21,10 @@ import java.util.concurrent.TimeUnit;
 
 public class Uploader {
 
-    private String bucket;
+    private final String bucket;
+    private final StorageType type;
 
-    private StorageType type;
     private ExecutorService executor;
-    private StorageConnection storageConnection;
     private List<FileHolder> doneUploads;
 
     Uploader(StorageType type, String bucket) {
@@ -53,7 +52,7 @@ public class Uploader {
         executor.shutdown();
     }
 
-    public FileHolder newUploadHolder(File file) {
+    public FileHolder newFileHolder(File file) {
         FileHolder fileHolder = new FileHolder();
         fileHolder.setFile(file);
         return fileHolder;
@@ -149,7 +148,7 @@ public class Uploader {
 
                 }
 
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
                 upload.onDbFailure(e.toString());
 
@@ -233,10 +232,17 @@ public class Uploader {
 
     public void deleteAll() {
         try (DatabaseConnection db = new DatabaseConnection()) {
-            db.deleteAll();
+            db.deleteAll(bucket);
+            FileHolder bucketHolder = new FileHolder();
+            bucketHolder.setBucket(bucket);
+            StorageConnection storageConnection = getStorageConnection(bucketHolder);
+            storageConnection.removeAll();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+//    public String getPhoto(double longitude, double latitude) {
+//
+//    }
 }

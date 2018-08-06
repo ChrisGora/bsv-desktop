@@ -47,28 +47,26 @@ class DatabaseConnection implements AutoCloseable {
 
     private Connection connection;
 
-    public DatabaseConnection() {
-
+    public DatabaseConnection() throws SQLException {
         try {
             this.connection = newConnection();
-        } catch (SQLException | IOException | CertificateException e) {
+            testConnection();
+        } catch (IOException | CertificateException e) {
             e.printStackTrace();
+            throw new SQLException(e);
         }
-
-        testConnection();
-//        closeConnection();
     }
 
 
-    private void testConnection() {
+    private void testConnection() throws SQLException {
         String sql = "SELECT 'Success!' FROM DUAL;";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            ResultSet set = statement.executeQuery();
-            while (set.next()) {
-                String output = set.getString(1);
+            ResultSet results = statement.executeQuery();
+            while (results.next()) {
+                String output = results.getString(1);
                 System.out.println("DB says: " + output);
                 if (!output.equals("Success!")) {
-                    throw new SQLWarning("Database Success Message not received");
+                    throw new SQLException("Database Success Message not received");
                 }
             }
         } catch (SQLException e) {
@@ -77,19 +75,13 @@ class DatabaseConnection implements AutoCloseable {
     }
 
     private Connection newConnection() throws SQLException, IOException, CertificateException {
-        setSslProperties();
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-
-
-//        System.out.println("HERE 2");
         Properties info = newMySqlProperties();
-        Connection c = DriverManager.getConnection(JDBC_URL, info);
-//        c.setAutoCommit(false);
-        return c;
+        return DriverManager.getConnection(JDBC_URL, info);
     }
 
     @Override
@@ -280,15 +272,23 @@ class DatabaseConnection implements AutoCloseable {
 
             ResultSet results = statement.executeQuery();
 
+            int n = 0;
             while (results.next()) {
                 photoIds.add(results.getString(1));
+                n++;
+            }
+
+            if (n == 0) {
+                throw new SQLException("ResultSet was empty");
             }
         }
     }
 
-    public void deleteAll() {
-        String sql = "TRUNCATE TABLE Photo;";
+    public void deleteAll(String bucket) {
+        String sql =    "DELETE FROM Photo " +
+                        "WHERE bucketName = ?;";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, bucket);
             statement.execute();
             System.out.println("DELETE ALL: Done");
         } catch (SQLException e) {
@@ -302,6 +302,7 @@ class DatabaseConnection implements AutoCloseable {
     //    public List<String> getPhotosAround(double latitude, double longitude, double latitudeDelta, double longitudeDelta) {
     //------------------------------------------------------------------------------------------------------------------
     //
+/*
 
     private void setSslProperties() throws IOException, CertificateException {
         System.setProperty("javax.net.ssl.trustStore", newKeyStoreFile().getPath());
@@ -345,5 +346,6 @@ class DatabaseConnection implements AutoCloseable {
             return null;
         }
     }
+*/
 
 }

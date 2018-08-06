@@ -91,4 +91,26 @@ public class LocalStorageConnection implements StorageConnection {
             fileHolder.onRemoveFailure("File does not exist");
         }
     }
+
+    @Override
+    public void removeAll() {
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        Path filePath = Paths.get(System.getProperty("user.home"), bucket);
+        String filePathString = filePath.toString();
+
+        File folder = new File(filePathString);
+
+        // FIXME: 06/08/18 Refactor to use the callbacks instead
+
+        if ((!folder.isDirectory())) throw new AssertionError("File was not a directory");
+
+        if (folder.exists()) {
+            File[] files = folder.listFiles();
+            Objects.requireNonNull(files, "List of files was null");
+            for (File file : files) {
+                if (file != null) file.delete();
+            }
+        } else throw new AssertionError("File does not exist");
+
+    }
 }

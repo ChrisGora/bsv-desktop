@@ -87,4 +87,9 @@ class S3Connection implements StorageConnection {
         });
         s3.deleteObject(request);
     }
+
+    @Override
+    public void removeAll() {
+        // TODO: 06/08/18 Implement me!!!
+    }
 }
