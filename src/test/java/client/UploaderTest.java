@@ -1,49 +1,69 @@
 package client;
 
+import com.amazonaws.transform.MapEntry;
+import org.checkerframework.checker.nullness.qual.AssertNonNullIfNonNull;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import static org.junit.Assert.fail;
 
 public class UploaderTest {
 
+    private String error;
+
+    @Rule
+    public final TestName name = new TestName();
+
+    @Before
+    public void setUp() throws Exception {
+        error = null;
+    }
+
+    private Uploader newTestUploader() {
+        return new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
+    }
+
     @Test
-    public void amazonSimpleUploadTest() {
+    public void amazonSimpleUploadTest() throws InterruptedException {
         simpleUploadTest(StorageType.AMAZON);
+        System.out.println(name.getMethodName() + ": PASSED");
     }
 
     @Test
-    public void localSimpleUploadTest() {
+    public void localSimpleUploadTest() throws InterruptedException {
         simpleUploadTest(StorageType.LOCAL);
+        System.out.println(name.getMethodName() + ": PASSED");
     }
 
-    private void simpleUploadTest(StorageType type) {
+    private void simpleUploadTest(StorageType type) throws InterruptedException {
 
         ClassLoader classLoader = getClass().getClassLoader();
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
-        Uploader uploader = new Uploader(type, "bristol-streetview-photos");
+        Uploader uploader = newTestUploader();
         FileHolder upload = uploader.newFileHolder(file);
 
         CompletionObserver completionObserver = newSynchronizedCompletionObserver();
-        upload.setUploadCompletionListener(completionObserver);
+        upload.setDbUpdateCompletionListener(completionObserver);
         upload.setProgressListener(this::onProgressUpdated);
         upload.setUploadFailureListener(this::onFailure);
 
         uploader.upload(upload);
 
         synchronized (completionObserver) {
-            try {
-                completionObserver.wait(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                completionObserver.wait(5000);
         }
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>> EXITED SYNCHRONISED");
@@ -56,7 +76,7 @@ public class UploaderTest {
     }
 
     @Test
-    public void trip2UploadTest() {
+    public void trip2UploadTest() throws InterruptedException {
 
         ClassLoader classLoader = getClass().getClassLoader();
         File folder = new File(Objects.requireNonNull(classLoader.getResource("trip2")).getFile());
@@ -64,7 +84,7 @@ public class UploaderTest {
 
         File[] files = folder.listFiles();
 
-        Uploader uploader = new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
+        Uploader uploader = newTestUploader();
         uploader.deleteAll();
 
         for (File file : Objects.requireNonNull(files, "Files were null")) {
@@ -80,18 +100,13 @@ public class UploaderTest {
                         uploader.upload(upload);
 
                         synchronized (completionObserver) {
-                            try {
-                                completionObserver.wait(4000); // TODO: 31/07/18 Ask Sion for help
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                            completionObserver.wait(5000); // TODO: 31/07/18 Ask Sion for help
                         }
 
                     }
             }
         }
-
-
+        System.out.println(name.getMethodName() + ": PASSED");
     }
 
     private CompletionObserver newSynchronizedCompletionObserver() {
@@ -117,13 +132,14 @@ public class UploaderTest {
         System.out.println("DONE: " + fileHolder.getKey());
     }
 
-    private void onFailure(String error) {
+    private void onFailure(String error) throws AssertionError {
+        this.error = error;
         System.out.println("ERROR: " + error);
     }
 
     @Test
     public void getPhotoTest() {
-
+        System.out.println(name.getMethodName() + ": PASSED");
     }
 
     @Test
@@ -131,15 +147,21 @@ public class UploaderTest {
 
         // FIXME: 06/08/18 Still not working properly - likey due to sync (?)
 
-        //        synchronized (this) {
-            localSimpleUploadTest();
-//            wait(10000);
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            db.deleteAll("bristol-streetview-photos");
+        }
+
+//        synchronized (this) {
+            simpleUploadTest(StorageType.LOCAL);
+//            wait(1000);
 //        }
+
+        if (error != null) fail(error);
+
         List<String> ids;
+
         try (DatabaseConnection db = new DatabaseConnection()) {
             ids = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52));
-//            ids = db.getPhotosTakenBetween( LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52),
-//                                            LocalDateTime.of(2017, Month.FEBRUARY, 2, 12, 34, 56));
         }
 
 
@@ -147,21 +169,32 @@ public class UploaderTest {
         Assert.assertEquals("Incorrect array size", 1, ids.size());
         Assert.assertEquals("0236451263344ab88f9940679b1dc59b", ids.get(0));
 
-        System.out.println("HERE");
+        System.out.println(name.getMethodName() + ": PASSED");
+    }
 
-//        Uploader uploader = new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
-//        uploader.deleteAll();
+    @Test
+    public void removeTest() throws SQLException, InterruptedException {
+        uploadAssertionsTest();
 
-//        try (DatabaseConnection db = new DatabaseConnection()) {
-//            ids = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52));
-//        } catch (SQLException e) {
-//            System.out.println(e.getSQLState());
-//        }
-//
-//        Assert.assertTrue("Incorrect array size", ids.size() == 0);
+        Uploader uploader = newTestUploader();
+        uploader.deleteAll();
+
+        String exception = null;
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            db.getPhotosTakenOn(LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52));
+        } catch (SQLException e) {
+            exception = e.getMessage();
+        }
+
+        Assert.assertNotNull("No exception was thrown", exception);
+        Assert.assertEquals("Incorrect exception","ResultSet was empty", exception);
+
+        System.out.println(name.getMethodName() + ": PASSED");
 
     }
 
     // TODO: 06/08/18 test that file gets removed when db rejects it
+
+//    public void
 
 }

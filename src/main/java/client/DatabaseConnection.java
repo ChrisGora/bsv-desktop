@@ -64,9 +64,11 @@ class DatabaseConnection implements AutoCloseable {
             ResultSet results = statement.executeQuery();
             while (results.next()) {
                 String output = results.getString(1);
-                System.out.println("DB says: " + output);
+//                System.out.println("DB : " + output);
                 if (!output.equals("Success!")) {
                     throw new SQLException("Database Success Message not received");
+                } else {
+                    System.out.println("DB Connection successfully opened");
                 }
             }
         } catch (SQLException e) {

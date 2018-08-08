@@ -156,7 +156,7 @@ public class DatabaseConnectionTest {
     }
 
     @Test
-    public void getPhotoGPS() throws SQLException {
+    public void getPhotoExactGPS() throws SQLException {
 
         List<String> ids;
 
@@ -275,4 +275,7 @@ public class DatabaseConnectionTest {
         Assert.assertTrue("Missing id", set.contains("1234567"));
         Assert.assertTrue("Missing id", set.contains("1234569"));
     }
+
+
+
 }
