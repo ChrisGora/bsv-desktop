@@ -234,7 +234,7 @@ public class Uploader {
         }
     }
 
-//    public String getPhoto(double longitude, double latitude) {
-//
-//    }
+    public String getPhoto(double longitude, double latitude) {
+
+    }
 }
