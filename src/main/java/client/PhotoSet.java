@@ -1,8 +1,8 @@
 package client;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.ImmutableList;
+
+import java.util.*;
 
 public class PhotoSet {
 
@@ -21,6 +21,17 @@ public class PhotoSet {
     public PhotoSet(double pointLatitude, double pointLongitude) {
         this.pointLatitude = pointLatitude;
         this.pointLongitude = pointLongitude;
+
+        this.ids = new ArrayList<>();
+        this.distances = new HashMap<>();
+        this.images = new HashMap<>();
+    }
+
+    public void add(ImageMetadata imageMetadata, Double distance) {
+        String id = imageMetadata.getId();
+        ids.add(id);
+        distances.put(id, distance);
+        images.put(id, imageMetadata);
     }
 
     public double getPointLatitude() {
@@ -32,14 +43,14 @@ public class PhotoSet {
     }
 
     public List<String> getIds() {
-        return ids;
+        return Collections.unmodifiableList(ids);
     }
 
     public Map<String, Double> getDistances() {
-        return distances;
+        return Collections.unmodifiableMap(distances);
     }
 
     public Map<String, ImageMetadata> getImages() {
-        return images;
+        return Collections.unmodifiableMap(images);
     }
 }

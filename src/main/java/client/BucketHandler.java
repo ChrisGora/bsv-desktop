@@ -10,23 +10,23 @@ import io.jenetics.jpx.geom.Geoid;
 import org.apache.commons.imaging.ImageReadException;
 
 import javax.annotation.Nullable;
-import javax.xml.crypto.Data;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Uploader {
+public class BucketHandler implements AutoCloseable {
+
+//    TODO: 09/08/18 Implement logic to keep track of routeIds
+//    Get the current highest route id from the database when the object is instantiated
+//    Provide a new 'increment rout id' method to increment the id manually - eg by the UI
 
     private static final double LATITUDE_DELTA = 0.001;
     private static final double LONGITUDE_DELTA = 0.001;
@@ -37,12 +37,13 @@ public class Uploader {
     private ExecutorService executor;
     private List<FileHolder> doneUploads;
 
-    Uploader(StorageType type, String bucket) {
-//        this.executor = Executors.newFixedThreadPool(2);
-        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
-        this.doneUploads = new ArrayList<>();
+    BucketHandler(String bucket, StorageType type) {
         this.type = type;
         this.bucket = bucket;
+
+        // FIXME: 09/08/18 Remove the debuggin executor and use standard executor for real life
+        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
+        this.doneUploads = new ArrayList<>();
     }
 
     private StorageConnection getStorageConnection(FileHolder fileHolder) {
@@ -58,7 +59,13 @@ public class Uploader {
         }
     }
 
-    public void stop() {
+//    @Deprecated
+//    public void stop() throws Exception {
+//        close();
+//    }
+
+    @Override
+    public void close() throws Exception {
         executor.shutdown();
     }
 
@@ -124,7 +131,7 @@ public class Uploader {
 
         executor.submit(() -> {
             try (DatabaseConnection db = new DatabaseConnection()) {
-                System.out.println("Uploader established a DB connection");
+                System.out.println("BucketHandler established a DB connection");
 //            System.out.println(upload.getBucket());
 //            System.out.println(upload.getKey());
                 ImageMetadata metadata = upload.getMetadata();
@@ -165,7 +172,7 @@ public class Uploader {
         });
     }
 
-    public void saveJustUploadedAsNewRoute(int routeId) {
+    public int saveJustUploadedAsNewRoute(int routeId) {
 
         List<WayPoint> wayPoints = getWayPoints();
         GPX gpx = getGpx(wayPoints);
@@ -173,6 +180,7 @@ public class Uploader {
         System.out.println("Waypoints size: " + wayPoints.size());
         System.out.println("builder done");
         uploadGpx(routeId, gpx);
+        return wayPoints.size();
     }
 
     private void uploadGpx(int routeId, GPX gpx) {
@@ -222,6 +230,8 @@ public class Uploader {
 
         System.out.println("done size: " + doneUploads.size());
 
+        doneUploads.sort(Comparator.comparing(file -> file.getMetadata().getPhotoDateTime()));
+
         for (FileHolder fileHolder : doneUploads) {
             double longitude = fileHolder.getMetadata().getLongitude();
             double latitude = fileHolder.getMetadata().getLatitude();
@@ -258,8 +268,7 @@ public class Uploader {
             throw new IllegalStateException("Images shouldn't be null");
         } else {
 
-            List<String> ids = new ArrayList<>();
-            List<Double> distances = new ArrayList<>();
+            List<PhotoResult> photoResults = new ArrayList<>();
 
             for (ImageMetadata image : images) {
 
@@ -267,15 +276,44 @@ public class Uploader {
                 Point start = WayPoint.of(image.getLatitude(), image.getLongitude());
                 Length distance = Geoid.WGS84.distance(start, end);
 
-                ids.add(image.getId());
-                distances.add(distance.doubleValue());
+                photoResults.add(new PhotoResult(image, distance.doubleValue()));
             }
 
+            photoResults.sort(Comparator.comparingDouble(PhotoResult::getDistance));
 
+            PhotoSet photoSet = new PhotoSet(latitude, longitude);
 
-
-//            PhotoSet photoSet = new PhotoSet(latitude, longitude);
+            for (PhotoResult result : photoResults) {
+                photoSet.add(result.getImageMetadata(), result.getDistance());
+            }
+            return photoSet;
         }
 
     }
+
+    private class PhotoResult {
+
+        private final String id;
+        private final double distance;
+        private final ImageMetadata imageMetadata;
+
+        PhotoResult(ImageMetadata imageMetadata, double distance) {
+            this.id = imageMetadata.getId();
+            this.distance = distance;
+            this.imageMetadata = imageMetadata;
+        }
+
+        String getId() {
+            return id;
+        }
+
+        double getDistance() {
+            return distance;
+        }
+
+        ImageMetadata getImageMetadata() {
+            return imageMetadata;
+        }
+    }
+
 }

@@ -11,7 +11,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         DatabaseConnectionTest.class,
         ImageMetadataTest.class,
-        UploaderTest.class
+        BucketHandlerTest.class
 })
 
 public class ClientTests {

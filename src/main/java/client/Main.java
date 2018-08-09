@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class Main extends Application {
 
-    private Uploader uploader;
+    private BucketHandler bucketHandler;
     private Pane rootGroup;
 
     private GridPane progressGrid;
@@ -33,7 +33,7 @@ public class Main extends Application {
     }
 
     public void start(Stage primaryStage) throws Exception {
-        this.uploader = new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
+        this.bucketHandler = new BucketHandler("bristol-streetview-photos", StorageType.LOCAL);
         FileChooser fileChooser = new FileChooser();
 
         primaryStage.setTitle("Database client");
@@ -84,10 +84,10 @@ public class Main extends Application {
 
     private void handleFile(Stage primaryStage, File file) {
         if (file != null) {
-            FileHolder upload = uploader.newFileHolder(file);
+            FileHolder upload = bucketHandler.newFileHolder(file);
             if (upload != null) {
                 showUploadProgress(primaryStage, upload);
-                uploader.upload(upload);
+                bucketHandler.upload(upload);
             }
         }
     }
@@ -133,7 +133,7 @@ public class Main extends Application {
         GridPane.setConstraints(newRouteButton, col, row);
 
         newRouteButton.setText("Save as new route");
-        newRouteButton.setOnAction((event) -> uploader.saveJustUploadedAsNewRoute(2));
+        newRouteButton.setOnAction((event) -> bucketHandler.saveJustUploadedAsNewRoute(2));
         return newRouteButton;
     }
 
@@ -187,7 +187,7 @@ public class Main extends Application {
     @Override
     public void stop() throws Exception {
         super.stop();
-        uploader.stop();
+        bucketHandler.close();
 
 
 

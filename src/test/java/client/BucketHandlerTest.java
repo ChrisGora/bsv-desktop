@@ -1,25 +1,22 @@
 package client;
 
-import com.amazonaws.transform.MapEntry;
-import org.checkerframework.checker.nullness.qual.AssertNonNullIfNonNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.awt.*;
 import java.io.File;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class UploaderTest {
+public class BucketHandlerTest {
 
     private String error;
 
@@ -31,12 +28,12 @@ public class UploaderTest {
         error = null;
     }
 
-    private Uploader newTestUploader() {
+    private BucketHandler newTestUploader() {
         return newTestUploader(StorageType.LOCAL);
     }
 
-    private Uploader newTestUploader(StorageType type) {
-        return new Uploader(type, "bristol-streetview-photos");
+    private BucketHandler newTestUploader(StorageType type) {
+        return new BucketHandler("bristol-streetview-photos", type);
     }
 
     @Test
@@ -59,17 +56,17 @@ public class UploaderTest {
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
-        Uploader uploader = newTestUploader(StorageType.AMAZON);
-        uploader.deleteAll();
+        BucketHandler bucketHandler = newTestUploader(StorageType.AMAZON);
+        bucketHandler.deleteAll();
 
-        FileHolder upload = uploader.newFileHolder(file);
+        FileHolder upload = bucketHandler.newFileHolder(file);
 
         CompletionObserver completionObserver = newSynchronizedCompletionObserver();
         upload.setDbUpdateCompletionListener(completionObserver);
         upload.setProgressListener(this::onProgressUpdated);
         upload.setUploadFailureListener(this::onFailure);
 
-        uploader.upload(upload);
+        bucketHandler.upload(upload);
 
         synchronized (completionObserver) {
                 completionObserver.wait(5000);
@@ -93,12 +90,12 @@ public class UploaderTest {
 
         File[] files = folder.listFiles();
 
-        Uploader uploader = newTestUploader();
-        uploader.deleteAll();
+        BucketHandler bucketHandler = newTestUploader();
+        bucketHandler.deleteAll();
 
         for (File file : Objects.requireNonNull(files, "Files were null")) {
             if (file != null && file.getPath().contains("_E.jpg")) {
-                    FileHolder upload = uploader.newFileHolder(file);
+                    FileHolder upload = bucketHandler.newFileHolder(file);
                     if (upload != null) {
                         upload.setProgressListener(this::onProgressUpdated);
                         upload.setUploadFailureListener(this::onFailure);
@@ -106,7 +103,7 @@ public class UploaderTest {
                         CompletionObserver completionObserver = newSynchronizedCompletionObserver();
                         upload.setDbUpdateCompletionListener(completionObserver);
 
-                        uploader.upload(upload);
+                        bucketHandler.upload(upload);
 
                         synchronized (completionObserver) {
                             completionObserver.wait(5000); // TODO: 31/07/18 Ask Sion for help
@@ -115,6 +112,8 @@ public class UploaderTest {
                     }
             }
         }
+
+        bucketHandler.saveJustUploadedAsNewRoute(1);
 
         if (error != null) fail(error);
         System.out.println(name.getMethodName() + ": PASSED");
@@ -149,11 +148,6 @@ public class UploaderTest {
     }
 
     @Test
-    public void getPhotoTest() {
-        System.out.println(name.getMethodName() + ": PASSED");
-    }
-
-    @Test
     public void uploadAssertionsTest() throws SQLException, InterruptedException {
 
         // FIXME: 06/08/18 Still not working properly - likey due to sync (?)
@@ -162,11 +156,7 @@ public class UploaderTest {
             db.deleteAll("bristol-streetview-photos");
         }
 
-//        synchronized (this) {
-            simpleUploadTest(StorageType.LOCAL);
-//            wait(1000);
-//        }
-
+        simpleUploadTest(StorageType.LOCAL);
         if (error != null) fail(error);
 
         List<ImageMetadata> images;
@@ -187,8 +177,8 @@ public class UploaderTest {
     public void removeTest() throws SQLException, InterruptedException {
         uploadAssertionsTest();
 
-        Uploader uploader = newTestUploader();
-        uploader.deleteAll();
+        BucketHandler bucketHandler = newTestUploader();
+        bucketHandler.deleteAll();
 
         String exception = null;
         try (DatabaseConnection db = new DatabaseConnection()) {
@@ -206,6 +196,41 @@ public class UploaderTest {
 
     // TODO: 06/08/18 test that file gets removed when db rejects it
 
-//    public void
 
+    @Test
+    public void getPhotoTest() throws InterruptedException {
+
+        BucketHandler bucketHandler = newTestUploader();
+        bucketHandler.deleteAll();
+
+        trip2UploadTest();
+        if (error != null) fail(error);
+
+        PhotoSet set = bucketHandler.getPhotos(51.45868, -2.60385);
+
+//        Trip 2 closest to woodland rd and university walk intersection:
+//        51.45794530000263
+//        -2.6036475
+
+// b96810a1aaa843c09b1b8315e588a4e6
+// 2688
+// 5376
+// 2018-07-30 13:27:01
+// 2018-08-09 17:17:59
+// 51.45794530000263
+// -2.6036475
+// 1
+// bristol-streetview-photos
+// b96810a1aaa843c09b1b8315e588a4e6-00152224 30 Jul 2018 13-27-01 BST_E.jpg
+
+
+        String id = set.getIds().get(0);
+        Double distance = set.getDistances().get(id);
+
+        assertEquals("Wrong id", "b96810a1aaa843c09b1b8315e588a4e6", id);
+
+        System.out.println("DISTANCE: " + distance);
+
+        System.out.println(name.getMethodName() + ": PASSED");
+    }
 }
