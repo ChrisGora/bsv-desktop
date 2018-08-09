@@ -3,9 +3,15 @@ package client;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import io.jenetics.jpx.GPX;
+import io.jenetics.jpx.Length;
+import io.jenetics.jpx.Point;
 import io.jenetics.jpx.WayPoint;
+import io.jenetics.jpx.geom.Geoid;
 import org.apache.commons.imaging.ImageReadException;
 
+import javax.annotation.Nullable;
+import javax.xml.crypto.Data;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -14,12 +20,16 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Uploader {
+
+    private static final double LATITUDE_DELTA = 0.001;
+    private static final double LONGITUDE_DELTA = 0.001;
 
     private final String bucket;
     private final StorageType type;
@@ -234,7 +244,38 @@ public class Uploader {
         }
     }
 
-    public String getPhoto(double longitude, double latitude) {
+    @Nullable
+    public PhotoSet getPhotos(double latitude, double longitude) {
+        List<ImageMetadata> images = null;
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            images = db.getPhotosAround(latitude, LATITUDE_DELTA, longitude, LONGITUDE_DELTA);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        if (images == null) {
+            throw new IllegalStateException("Images shouldn't be null");
+        } else {
+
+            List<String> ids = new ArrayList<>();
+            List<Double> distances = new ArrayList<>();
+
+            for (ImageMetadata image : images) {
+
+                Point end = WayPoint.of(latitude, longitude);
+                Point start = WayPoint.of(image.getLatitude(), image.getLongitude());
+                Length distance = Geoid.WGS84.distance(start, end);
+
+                ids.add(image.getId());
+                distances.add(distance.doubleValue());
+            }
+
+
+
+
+//            PhotoSet photoSet = new PhotoSet(latitude, longitude);
+        }
 
     }
 }
