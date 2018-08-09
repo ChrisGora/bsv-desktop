@@ -174,9 +174,8 @@ class DatabaseConnection implements AutoCloseable {
 //            }
         }
 
-        if (bucket == null || key == null) {
-            throw new SQLException("Bucket or key was null");
-        } else {
+        if (bucket == null || key == null) throw new SQLException("Bucket or key was null");
+        else {
             FilePath filePath = new FilePath();
             filePath.setBucket(bucket);
             filePath.setKey(key);
@@ -204,9 +203,7 @@ class DatabaseConnection implements AutoCloseable {
                 n++;
             }
 
-            if (n == 0) {
-                throw new SQLException("ResultSet was empty");
-            }
+            if (n == 0) throw new SQLException("ResultSet was empty");
         }
         return photoIds;
     }
@@ -244,9 +241,7 @@ class DatabaseConnection implements AutoCloseable {
                 n++;
             }
 
-            if (n == 0) {
-                throw new SQLException("ResultSet was empty");
-            }
+            if (n == 0) throw new SQLException("ResultSet was empty");
         }
     }
 
@@ -280,9 +275,7 @@ class DatabaseConnection implements AutoCloseable {
                 n++;
             }
 
-            if (n == 0) {
-                throw new SQLException("ResultSet was empty");
-            }
+            if (n == 0) throw new SQLException("ResultSet was empty");
         }
     }
 
@@ -298,12 +291,39 @@ class DatabaseConnection implements AutoCloseable {
         }
     }
 
-    //    }
-    //
-    //
-    //    public List<String> getPhotosAround(double latitude, double longitude, double latitudeDelta, double longitudeDelta) {
-    //------------------------------------------------------------------------------------------------------------------
-    //
+    public List<String> getPhotosAround(double latitude,
+                                        double latitudeDelta,
+                                        double longitude,
+                                        double longitudeDelta
+                                        ) throws SQLException {
+
+        String sql =    "SELECT id FROM Photo " +
+                        "WHERE latitude BETWEEN ? AND ? " +
+                        "AND longitude BETWEEN ? AND ?;";
+
+        List<String> photoIds = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setDouble(1, latitude - latitudeDelta);
+            statement.setDouble(2, latitude + latitudeDelta);
+            statement.setDouble(3, longitude - longitudeDelta);
+            statement.setDouble(4, longitude + longitudeDelta);
+
+            ResultSet results = statement.executeQuery();
+
+            int n = 0;
+            while (results.next()) {
+                photoIds.add(results.getString(1));
+                n++;
+            }
+
+            if (n == 0) throw new SQLException("ResultSet was empty");
+        }
+
+        return photoIds;
+    }
+
+        //    ------------------------------------------------------------------------------------------------------------------
+
 /*
 
     private void setSslProperties() throws IOException, CertificateException {
