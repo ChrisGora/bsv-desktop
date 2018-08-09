@@ -32,7 +32,11 @@ public class UploaderTest {
     }
 
     private Uploader newTestUploader() {
-        return new Uploader(StorageType.LOCAL, "bristol-streetview-photos");
+        return newTestUploader(StorageType.LOCAL);
+    }
+
+    private Uploader newTestUploader(StorageType type) {
+        return new Uploader(type, "bristol-streetview-photos");
     }
 
     @Test
@@ -55,7 +59,7 @@ public class UploaderTest {
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
-        Uploader uploader = newTestUploader();
+        Uploader uploader = newTestUploader(StorageType.AMAZON);
         uploader.deleteAll();
 
         FileHolder upload = uploader.newFileHolder(file);
