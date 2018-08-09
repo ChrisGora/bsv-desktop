@@ -272,9 +272,7 @@ public class BucketHandler implements AutoCloseable {
 
             for (ImageMetadata image : images) {
 
-                Point end = WayPoint.of(latitude, longitude);
-                Point start = WayPoint.of(image.getLatitude(), image.getLongitude());
-                Length distance = Geoid.WGS84.distance(start, end);
+                Length distance = Geoid.WGS84.distance(WayPoint.of(image.getLatitude(), image.getLongitude()), WayPoint.of(latitude, longitude));
 
                 photoResults.add(new PhotoResult(image, distance.doubleValue()));
             }

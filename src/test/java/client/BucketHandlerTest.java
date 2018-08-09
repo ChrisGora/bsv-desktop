@@ -208,10 +208,7 @@ public class BucketHandlerTest {
 
         PhotoSet set = bucketHandler.getPhotos(51.45868, -2.60385);
 
-//        Trip 2 closest to woodland rd and university walk intersection:
-//        51.45794530000263
-//        -2.6036475
-
+// Trip 2 closest to woodland rd and university walk intersection:
 // b96810a1aaa843c09b1b8315e588a4e6
 // 2688
 // 5376
@@ -223,11 +220,11 @@ public class BucketHandlerTest {
 // bristol-streetview-photos
 // b96810a1aaa843c09b1b8315e588a4e6-00152224 30 Jul 2018 13-27-01 BST_E.jpg
 
-
         String id = set.getIds().get(0);
         Double distance = set.getDistances().get(id);
 
-        assertEquals("Wrong id", "b96810a1aaa843c09b1b8315e588a4e6", id);
+        Assert.assertEquals("Wrong id", "b96810a1aaa843c09b1b8315e588a4e6", id);
+        Assert.assertEquals("Incorrect distance", 82.89, distance, 0.1);
 
         System.out.println("DISTANCE: " + distance);
 
