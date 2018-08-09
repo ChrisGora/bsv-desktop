@@ -19,6 +19,7 @@ public class DatabaseConnectionTest {
     public void singleInsertTest() {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll("test-bucket");
+            db.deleteAll("bristol-streetview-photos");
             int result = db.insertPhotoRow(
                     "1234567",
                     1000,
@@ -45,6 +46,7 @@ public class DatabaseConnectionTest {
         singleInsertTest();
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll("test-bucket");
+            db.deleteAll("bristol-streetview-photos");
 
             // Photo 1
             int result = db.insertPhotoRow(
@@ -301,5 +303,29 @@ public class DatabaseConnectionTest {
         Assert.assertTrue("Missing id", set.contains("1234569"));
         Assert.assertTrue("Missing id", set.contains("1234570"));
 
+    }
+
+    @Test
+    public void getPhotosAroundTest2() throws SQLException {
+        List<String> ids;
+
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            multipleInsertTest();
+            ids = db.getPhotosAround(
+                    1,
+                    100000,
+                    400,
+                    100000
+            );
+        }
+
+        Assert.assertEquals("Incorrect size", 4, ids.size());
+
+        Set<String> set = new HashSet<>(ids);
+
+        Assert.assertTrue("Missing id", set.contains("1234567"));
+        Assert.assertTrue("Missing id", set.contains("1234569"));
+        Assert.assertTrue("Missing id", set.contains("1234570"));
+        Assert.assertTrue("Missing id", set.contains("1234571"));
     }
 }

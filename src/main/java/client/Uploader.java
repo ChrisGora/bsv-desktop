@@ -119,16 +119,8 @@ public class Uploader {
 //            System.out.println(upload.getKey());
                 ImageMetadata metadata = upload.getMetadata();
                 int result = db.insertPhotoRow(
-                        metadata.getId(),
-                        metadata.getHeight(),
-                        metadata.getWidth(),
-//                        new Timestamp((new Date()).getTime()),
-//                        new Timestamp(new Date().getTime()),
-                        metadata.getPhotoDateTime(),
+                        metadata,
                         localDateTime,
-                        metadata.getLatitude(),
-                        metadata.getLongitude(),
-                        metadata.getSerialNumber(),
                         1,
                         upload.getBucket(),
                         upload.getKey()

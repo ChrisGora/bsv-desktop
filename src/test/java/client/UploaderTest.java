@@ -37,12 +37,14 @@ public class UploaderTest {
     @Test
     public void amazonSimpleUploadTest() throws InterruptedException {
         simpleUploadTest(StorageType.AMAZON);
+        if (error != null) fail(error);
         System.out.println(name.getMethodName() + ": PASSED");
     }
 
     @Test
     public void localSimpleUploadTest() throws InterruptedException {
         simpleUploadTest(StorageType.LOCAL);
+        if (error != null) fail(error);
         System.out.println(name.getMethodName() + ": PASSED");
     }
 
@@ -53,6 +55,8 @@ public class UploaderTest {
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
         Uploader uploader = newTestUploader();
+        uploader.deleteAll();
+
         FileHolder upload = uploader.newFileHolder(file);
 
         CompletionObserver completionObserver = newSynchronizedCompletionObserver();
@@ -106,6 +110,8 @@ public class UploaderTest {
                     }
             }
         }
+
+        if (error != null) fail(error);
         System.out.println(name.getMethodName() + ": PASSED");
     }
 

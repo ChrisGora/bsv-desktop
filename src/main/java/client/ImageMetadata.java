@@ -32,7 +32,6 @@ import java.util.Objects;
 
 public class ImageMetadata {
 
-    private File file;
     private String id;
     private int height;
     private int width;
@@ -42,15 +41,22 @@ public class ImageMetadata {
     private String serialNumber;
 
 
-
-
-    public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
-        this.file = file;
-        readJpegMetadata();
-        readExifMetadata();
+    public ImageMetadata(String id, int height, int width, LocalDateTime photoDateTime, double latitude, double longitude, String serialNumber) {
+        this.id = id;
+        this.height = height;
+        this.width = width;
+        this.photoDateTime = photoDateTime;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.serialNumber = serialNumber;
     }
 
-    private void readJpegMetadata() throws ImageProcessingException, IOException, MetadataException {
+    public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
+        readJpegMetadata(file);
+        readExifMetadata(file);
+    }
+
+    private void readJpegMetadata(File file) throws ImageProcessingException, IOException, MetadataException {
         Metadata metadata = ImageMetadataReader.readMetadata(file);
         JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
         ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
@@ -59,7 +65,7 @@ public class ImageMetadata {
 
     }
 
-    private void readExifMetadata() throws ImageReadException, IOException {
+    private void readExifMetadata(File file) throws ImageReadException, IOException {
         org.apache.commons.imaging.common.ImageMetadata imageMetadata = (JpegImageMetadata) Imaging.getMetadata(file);
         if (imageMetadata instanceof JpegImageMetadata) {
             JpegImageMetadata metadata = (JpegImageMetadata) imageMetadata;
@@ -186,7 +192,7 @@ public class ImageMetadata {
         }
     }*/
 
-    public void printMetadata() throws ImageProcessingException, IOException, XMPException {
+    public void printMetadata(File file) throws ImageProcessingException, IOException, XMPException {
         Metadata metadata = ImageMetadataReader.readMetadata(file);
 
         for (Directory directory : metadata.getDirectories()) {

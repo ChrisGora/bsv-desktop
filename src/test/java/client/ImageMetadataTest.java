@@ -37,7 +37,7 @@ public class ImageMetadataTest {
 //        assertEquals();
 
         try {
-            metadata.printMetadata();
+            metadata.printMetadata(file);
         } catch (ImageProcessingException | IOException | XMPException e) {
             e.printStackTrace();
         }

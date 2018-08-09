@@ -2,6 +2,7 @@ package client;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -103,7 +104,31 @@ class DatabaseConnection implements AutoCloseable {
         return mysqlProperties;
     }
 
-    public int insertPhotoRow(String id,
+    public int insertPhotoRow(
+            ImageMetadata metadata,
+            LocalDateTime uploadDateTime,
+            int routeId,
+            String bucketName,
+            String key
+    ) throws SQLException {
+        
+        return insertPhotoRow(  
+                metadata.getId(),
+                metadata.getHeight(),
+                metadata.getWidth(),
+                metadata.getPhotoDateTime(),
+                uploadDateTime,
+                metadata.getLatitude(),
+                metadata.getLongitude(),
+                metadata.getSerialNumber(),
+                routeId,
+                bucketName,
+                key
+        );
+    }
+    
+    @VisibleForTesting
+    int insertPhotoRow(String id,
                        int height,
                        int width,
                        LocalDateTime photoDateTime,
@@ -142,12 +167,10 @@ class DatabaseConnection implements AutoCloseable {
 
             n = statement.executeUpdate();
 
-//        } catch (SQLException e) {
-//            e.printStackTrace();
         }
 
         System.out.println("INSERT RESULT: " + n);
-        return  n;
+        return n;
 
     }
 
@@ -184,6 +207,8 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
+
+    // TODO: 09/08/18 Refactor into List<ImageMetadata> 
     public List<String> getPhotosTakenAt(double latitude, double longitude) throws SQLException {
         String sql =    "SELECT id FROM Photo " +
                         "WHERE latitude = ? " +
