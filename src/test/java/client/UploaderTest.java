@@ -8,6 +8,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import java.awt.*;
 import java.io.File;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -164,16 +165,16 @@ public class UploaderTest {
 
         if (error != null) fail(error);
 
-        List<String> ids;
+        List<ImageMetadata> images;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
-            ids = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52));
+            images = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52));
         }
 
 
-        Objects.requireNonNull(ids, "ids were null");
-        Assert.assertEquals("Incorrect array size", 1, ids.size());
-        Assert.assertEquals("0236451263344ab88f9940679b1dc59b", ids.get(0));
+        Objects.requireNonNull(images, "images were null");
+        Assert.assertEquals("Incorrect array size", 1, images.size());
+        Assert.assertEquals("0236451263344ab88f9940679b1dc59b", images.get(0).getId());
 
         System.out.println(name.getMethodName() + ": PASSED");
     }

@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.Assert;
 
 
+import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -164,17 +165,17 @@ public class DatabaseConnectionTest {
     @Test
     public void getPhotoExactGPS() throws SQLException {
 
-        List<String> ids;
+        List<ImageMetadata> images;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll("test-bucket");
             multipleInsertTest();
-            ids = db.getPhotosTakenAt(123.34455, 4555.5600054);
+            images = db.getPhotosTakenAt(123.34455, 4555.5600054);
         }
 
-        Assert.assertEquals("List must only have one element",1, ids.size());
+        Assert.assertEquals("List must only have one element",1, images.size());
 
-        String id = ids.get(0);
+        String id = images.get(0).getId();
 
         Assert.assertEquals("Wrong id", "1234567", id);
 
@@ -182,26 +183,26 @@ public class DatabaseConnectionTest {
 
     @Test (expected = SQLException.class)
     public void getPhotoGPSNoMatchTest() throws SQLException {
-        List<String> ids = new ArrayList<>();
+        List<ImageMetadata> images = new ArrayList<>();
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosTakenAt(123.3445, 4555.5600054);
+            images = db.getPhotosTakenAt(123.3445, 4555.5600054);
         }
     }
 
     @Test
     public void getPhotoDateTakenTest() throws SQLException {
-        List<String> ids;
+        List<ImageMetadata> images;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.AUGUST, 2, 13, 45));
+            images = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.AUGUST, 2, 13, 45));
         }
 
-        Assert.assertEquals("List must only have one element", 1, ids.size());
+        Assert.assertEquals("List must only have one element", 1, images.size());
 
-        String id = ids.get(0);
+        String id = images.get(0).getId();
 
         Assert.assertEquals("Wrong id", "1234569", id);
 
@@ -217,16 +218,16 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotoDateUploadedTest() throws SQLException {
-        List<String> ids = new ArrayList<>();
+        List<ImageMetadata> images = new ArrayList<>();
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosUploadedOn(LocalDateTime.of(2018, Month.JULY, 23, 12, 34));
+            images = db.getPhotosUploadedOn(LocalDateTime.of(2018, Month.JULY, 23, 12, 34));
         }
 
-        Assert.assertEquals("List must only have one element", 1, ids.size());
+        Assert.assertEquals("List must only have one element", 1, images.size());
 
-        String id = ids.get(0);
+        String id = images.get(0).getId();
 
         Assert.assertEquals("Wrong id", "1234570", id);
     }
@@ -242,18 +243,20 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotoBetweenDateTakenTest() throws SQLException {
-        List<String> ids = new ArrayList<>();
+        List<ImageMetadata> images = new ArrayList<>();
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosTakenBetween(
+            images = db.getPhotosTakenBetween(
                     LocalDateTime.of(2017, Month.AUGUST, 2, 13, 45),
                     LocalDateTime.of(2017, Month.AUGUST, 2, 13, 55));
 
         }
 
-        Assert.assertEquals("Incorrect size", 3, ids.size());
+        Assert.assertEquals("Incorrect size", 3, images.size());
 
+        List<String> ids = new ArrayList<>();
+        images.forEach((image) -> ids.add(image.getId()));
         Set<String> set = new HashSet<>(ids);
 
         Assert.assertTrue("Missing id", set.contains("1234569"));
@@ -264,18 +267,20 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotoBetweenDateUploadedTest() throws SQLException {
-        List<String> ids = new ArrayList<>();
+        List<ImageMetadata> images = new ArrayList<>();
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosUploadedBetween(
+            images = db.getPhotosUploadedBetween(
                     LocalDateTime.of(2018, Month.JULY, 23, 12, 31),
                     LocalDateTime.of(2018, Month.JULY, 23, 12, 33));
 
         }
 
-        Assert.assertEquals("Incorrect size", 2, ids.size());
+        Assert.assertEquals("Incorrect size", 2, images.size());
 
+        List<String> ids = new ArrayList<>();
+        images.forEach((image) -> ids.add(image.getId()));
         Set<String> set = new HashSet<>(ids);
 
         Assert.assertTrue("Missing id", set.contains("1234567"));
@@ -284,11 +289,11 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotosAroundTest1() throws SQLException {
-        List<String> ids;
+        List<ImageMetadata> images;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosAround(
+            images = db.getPhotosAround(
                     12.53,
                     0.0030,
                     400,
@@ -296,8 +301,10 @@ public class DatabaseConnectionTest {
             );
         }
 
-        Assert.assertEquals("Incorrect size", 2, ids.size());
+        Assert.assertEquals("Incorrect size", 2, images.size());
 
+        List<String> ids = new ArrayList<>();
+        images.forEach((image) -> ids.add(image.getId()));
         Set<String> set = new HashSet<>(ids);
 
         Assert.assertTrue("Missing id", set.contains("1234569"));
@@ -307,11 +314,11 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotosAroundTest2() throws SQLException {
-        List<String> ids;
+        List<ImageMetadata> images;
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             multipleInsertTest();
-            ids = db.getPhotosAround(
+            images = db.getPhotosAround(
                     1,
                     100000,
                     400,
@@ -319,8 +326,10 @@ public class DatabaseConnectionTest {
             );
         }
 
-        Assert.assertEquals("Incorrect size", 4, ids.size());
+        Assert.assertEquals("Incorrect size", 4, images.size());
 
+        List<String> ids = new ArrayList<>();
+        images.forEach((image) -> ids.add(image.getId()));
         Set<String> set = new HashSet<>(ids);
 
         Assert.assertTrue("Missing id", set.contains("1234567"));

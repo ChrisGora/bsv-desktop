@@ -19,6 +19,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -207,14 +208,25 @@ class DatabaseConnection implements AutoCloseable {
 
     }
 
+    private ImageMetadata newImageMetadata(ResultSet results) throws SQLException {
+        return new ImageMetadata(
+                results.getString("id"),
+                results.getInt("height"),
+                results.getInt("width"),
+                LocalDateTime.ofInstant(results.getTimestamp("photoTimestamp").toInstant(), ZoneId.systemDefault()),
+                results.getDouble("latitude"),
+                results.getDouble("longitude"),
+                results.getString("cameraSerialNumber")
+        );
+    }
 
-    // TODO: 09/08/18 Refactor into List<ImageMetadata> 
-    public List<String> getPhotosTakenAt(double latitude, double longitude) throws SQLException {
-        String sql =    "SELECT id FROM Photo " +
+    // TODO: 09/08/18 Refactor into List<ImageMetadata>
+    public List<ImageMetadata> getPhotosTakenAt(double latitude, double longitude) throws SQLException {
+        String sql =    "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
                         "WHERE latitude = ? " +
                         "AND longitude = ?;";
 
-        List<String> photoIds = new ArrayList<>();
+        List<ImageMetadata> images = new ArrayList<>();
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setDouble(1, latitude);
@@ -224,37 +236,37 @@ class DatabaseConnection implements AutoCloseable {
 
             int n = 0;
             while (results.next()) {
-                photoIds.add(results.getString(1));
+                images.add(newImageMetadata(results));
                 n++;
             }
 
             if (n == 0) throw new SQLException("ResultSet was empty");
         }
-        return photoIds;
+        return images;
     }
 
-//    Time of photo being taken:
-    public List<String> getPhotosTakenOn(LocalDateTime dateTime) throws SQLException {
-        String sql =    "SELECT id FROM Photo " +
+    //    Time of photo being taken:
+    public List<ImageMetadata> getPhotosTakenOn(LocalDateTime dateTime) throws SQLException {
+        String sql =    "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
                         "WHERE photoTimestamp = ?;";
 
-        List<String> photoIds = new ArrayList<>();
-        executeSqlWithOneDate(sql, dateTime, photoIds);
-        return photoIds;
+        List<ImageMetadata> images = new ArrayList<>();
+        executeSqlWithOneDate(sql, dateTime, images);
+        return images;
     }
 
 
 
-    public List<String> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
-        String sql =    "SELECT id FROM Photo " +
+    public List<ImageMetadata> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
+        String sql =    "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
                         "WHERE uploadTimestamp = ?;";
 
-        List<String> photoIds = new ArrayList<>();
-        executeSqlWithOneDate(sql, dateTime, photoIds);
-        return photoIds;
+        List<ImageMetadata> images = new ArrayList<>();
+        executeSqlWithOneDate(sql, dateTime, images);
+        return images;
     }
 
-    private void executeSqlWithOneDate(String sql, LocalDateTime dateTime, List<String> photoIds) throws SQLException {
+    private void executeSqlWithOneDate(String sql, LocalDateTime dateTime, List<ImageMetadata> images) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setTimestamp(1, Timestamp.valueOf(dateTime));
 
@@ -262,7 +274,7 @@ class DatabaseConnection implements AutoCloseable {
 
             int n = 0;
             while (results.next()) {
-                photoIds.add(results.getString(1));
+                images.add(newImageMetadata(results));
                 n++;
             }
 
@@ -270,23 +282,23 @@ class DatabaseConnection implements AutoCloseable {
         }
     }
 
-    public List<String> getPhotosTakenBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
+    public List<ImageMetadata> getPhotosTakenBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
         return getPhotosBetween(date1, date2, "photoTimestamp");
     }
 
-    public List<String> getPhotosUploadedBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
+    public List<ImageMetadata> getPhotosUploadedBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
         return getPhotosBetween(date1, date2, "uploadTimestamp");
     }
 
-    private List<String> getPhotosBetween(LocalDateTime date1, LocalDateTime date2, String where) throws SQLException {
-        String sql =    "SELECT id FROM Photo " +
+    private List<ImageMetadata> getPhotosBetween(LocalDateTime date1, LocalDateTime date2, String where) throws SQLException {
+        String sql =    "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
                         "WHERE " + where + " BETWEEN ? AND ?;";
-        List<String> photoIds = new ArrayList<>();
-        executeSqlWithTwoDates(sql, date1, date2, photoIds);
-        return photoIds;
+        List<ImageMetadata> images = new ArrayList<>();
+        executeSqlWithTwoDates(sql, date1, date2, images);
+        return images;
     }
 
-    private void executeSqlWithTwoDates(String sql, LocalDateTime dateTime1, LocalDateTime dateTime2, List<String> photoIds) throws SQLException {
+    private void executeSqlWithTwoDates(String sql, LocalDateTime dateTime1, LocalDateTime dateTime2, List<ImageMetadata> images) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
 //            statement.set(1, where);
             statement.setTimestamp(1, Timestamp.valueOf(dateTime1));
@@ -296,7 +308,7 @@ class DatabaseConnection implements AutoCloseable {
 
             int n = 0;
             while (results.next()) {
-                photoIds.add(results.getString(1));
+                images.add(newImageMetadata(results));
                 n++;
             }
 
@@ -316,17 +328,17 @@ class DatabaseConnection implements AutoCloseable {
         }
     }
 
-    public List<String> getPhotosAround(double latitude,
+    public List<ImageMetadata> getPhotosAround(double latitude,
                                         double latitudeDelta,
                                         double longitude,
                                         double longitudeDelta
                                         ) throws SQLException {
 
-        String sql =    "SELECT id FROM Photo " +
+        String sql =    "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
                         "WHERE latitude BETWEEN ? AND ? " +
                         "AND longitude BETWEEN ? AND ?;";
 
-        List<String> photoIds = new ArrayList<>();
+        List<ImageMetadata> images = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setDouble(1, latitude - latitudeDelta);
             statement.setDouble(2, latitude + latitudeDelta);
@@ -337,14 +349,14 @@ class DatabaseConnection implements AutoCloseable {
 
             int n = 0;
             while (results.next()) {
-                photoIds.add(results.getString(1));
+                images.add(newImageMetadata(results));
                 n++;
             }
 
             if (n == 0) throw new SQLException("ResultSet was empty");
         }
 
-        return photoIds;
+        return images;
     }
 
         //    ------------------------------------------------------------------------------------------------------------------
