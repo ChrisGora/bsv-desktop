@@ -1,16 +1,18 @@
-package client;
+package client.connections;
+
+import client.FileHolder;
+import client.StorageType;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
-public class LocalStorageConnection implements StorageConnection {
+public class LocalStorageConnection extends StorageConnection {
 
-    private FileHolder fileHolder;
 
     public LocalStorageConnection(FileHolder fileHolder) {
-        this.fileHolder = fileHolder;
+        super(fileHolder, StorageType.LOCAL);
     }
 
     @Override

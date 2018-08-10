@@ -1,5 +1,6 @@
 package client;
 
+import client.observers.CompletionObserver;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,7 +34,7 @@ public class BucketHandlerTest {
     }
 
     private BucketHandler newTestUploader(StorageType type) {
-        return new BucketHandler("bristol-streetview-photos", type);
+        return new BucketHandler("bristol-streetview-photos", type, 10, 10);
     }
 
     @Test
@@ -56,7 +57,7 @@ public class BucketHandlerTest {
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
-        BucketHandler bucketHandler = newTestUploader(StorageType.AMAZON);
+        BucketHandler bucketHandler = newTestUploader(type);
         bucketHandler.deleteAll();
 
         FileHolder upload = bucketHandler.newFileHolder(file);
@@ -207,27 +208,55 @@ public class BucketHandlerTest {
         if (error != null) fail(error);
 
         PhotoSet set = bucketHandler.getPhotos(51.45868, -2.60385);
+        Objects.requireNonNull(set, "PhotoSet was null");
 
-// Trip 2 closest to woodland rd and university walk intersection:
-// b96810a1aaa843c09b1b8315e588a4e6
-// 2688
-// 5376
-// 2018-07-30 13:27:01
-// 2018-08-09 17:17:59
-// 51.45794530000263
-// -2.6036475
-// 1
-// bristol-streetview-photos
-// b96810a1aaa843c09b1b8315e588a4e6-00152224 30 Jul 2018 13-27-01 BST_E.jpg
+        Assert.assertEquals("Incorrect number of elements in the set", 79, set.getIds().size());
+        Assert.assertEquals("Incorrect number of elements in the set", 79, set.getDistances().size());
+        Assert.assertEquals("Incorrect number of elements in the set", 79, set.getImages().size());
 
         String id = set.getIds().get(0);
-        Double distance = set.getDistances().get(id);
+        testImage(
+                set,
+                id,
+                "b96810a1aaa843c09b1b8315e588a4e6",
+                51.45794530000263,
+                -2.6036475,
+                82.89,
+                0.1
+                );
 
-        Assert.assertEquals("Wrong id", "b96810a1aaa843c09b1b8315e588a4e6", id);
-        Assert.assertEquals("Incorrect distance", 82.89, distance, 0.1);
-
-        System.out.println("DISTANCE: " + distance);
+        id = set.getIds().get(78);
+        testImage(
+                set,
+                id,
+                "546c16c46804439fa2b46164aae8d3c5",
+                51.4552715,
+                -2.603030303030303,
+                383.24,
+                0.5
+        );
 
         System.out.println(name.getMethodName() + ": PASSED");
     }
+
+
+    private void testImage(
+            PhotoSet set,
+            String id,
+            String expectedId,
+            double expectedLatitude,
+            double expectedLongitude,
+            double expectedDistance,
+            double delta
+    ) {
+        double latitude = set.getImages().get(id).getLatitude();
+        double longitude = set.getImages().get(id).getLongitude();
+        double distance = set.getDistances().get(id);
+
+        Assert.assertEquals("Wrong id", expectedId, id);
+        Assert.assertEquals("Wrong latitude", expectedLatitude, latitude, 0);
+        Assert.assertEquals("Wrong longitude", expectedLongitude, longitude, 0);
+        Assert.assertEquals("Wrong distance", expectedDistance, distance, delta);
+    }
+
 }

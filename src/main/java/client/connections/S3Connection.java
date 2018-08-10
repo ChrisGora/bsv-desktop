@@ -1,5 +1,7 @@
-package client;
+package client.connections;
 
+import client.FileHolder;
+import client.StorageType;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.regions.Regions;
@@ -10,13 +12,14 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import java.util.Objects;
 
 //class S3Connection extends Task<Void> {
-class S3Connection implements StorageConnection {
+public class S3Connection extends StorageConnection {
 
     private static AmazonS3 s3 = null;
 //    private AmazonS3 s3;
     private FileHolder fileHolder;
 
-    S3Connection(FileHolder fileHolder) {
+    public S3Connection(FileHolder fileHolder) {
+        super(fileHolder, StorageType.AMAZON);
         if (s3 == null) {
 
             s3 = AmazonS3ClientBuilder
@@ -90,6 +93,7 @@ class S3Connection implements StorageConnection {
 
     @Override
     public void removeAll() {
-        // TODO: 06/08/18 Implement me!!!
+        throw new RuntimeException("Implement me!!!");
+        // TODO: 10/08/18 IMPLEMENT ME!!!!
     }
 }

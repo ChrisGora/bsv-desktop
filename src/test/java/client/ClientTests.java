@@ -14,5 +14,4 @@ import org.junit.runners.Suite;
         BucketHandlerTest.class
 })
 
-public class ClientTests {
-}
+public class ClientTests {}

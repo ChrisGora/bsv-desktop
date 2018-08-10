@@ -1,10 +1,12 @@
 package client;
 
+import client.connections.LocalStorageConnection;
+import client.connections.S3Connection;
+import client.connections.StorageConnection;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Length;
-import io.jenetics.jpx.Point;
 import io.jenetics.jpx.WayPoint;
 import io.jenetics.jpx.geom.Geoid;
 import org.apache.commons.imaging.ImageReadException;
@@ -22,15 +24,25 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Manipulates a bucket storing the 360 photos and the associated database.
+ * Adds new photos, removes photos, and retrieves photos based on specified criteria.
+ * {@link StorageType} enum specifies where the bucket might be located.
+ * Behaviour of this class is identical for all Storage Types.
+ *
+ * Any SQL specific classes, such as ResultSet, should never be exposed as return values.
+ *
+ * @author Chris Gora
+ * @version 1.0, 01.09.2018
+ */
 public class BucketHandler implements AutoCloseable {
 
 //    TODO: 09/08/18 Implement logic to keep track of routeIds
 //    Get the current highest route id from the database when the object is instantiated
 //    Provide a new 'increment rout id' method to increment the id manually - eg by the UI
 
-    private static final double LATITUDE_DELTA = 0.001;
-    private static final double LONGITUDE_DELTA = 0.001;
-
+    private final double latitudeDelta;
+    private final double longitudeDelta;
     private final String bucket;
     private final StorageType type;
 
@@ -38,12 +50,19 @@ public class BucketHandler implements AutoCloseable {
     private List<FileHolder> doneUploads;
 
     BucketHandler(String bucket, StorageType type) {
+        this(bucket, type, 0.001, 0.001);
+    }
+
+    BucketHandler(String bucket, StorageType type, double latitudeDelta, double longitudeDelta) {
         this.type = type;
         this.bucket = bucket;
+        this.latitudeDelta = latitudeDelta;
+        this.longitudeDelta = longitudeDelta;
 
         // FIXME: 09/08/18 Remove the debuggin executor and use standard executor for real life
         this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
         this.doneUploads = new ArrayList<>();
+
     }
 
     private StorageConnection getStorageConnection(FileHolder fileHolder) {
@@ -65,7 +84,7 @@ public class BucketHandler implements AutoCloseable {
 //    }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         executor.shutdown();
     }
 
@@ -258,7 +277,7 @@ public class BucketHandler implements AutoCloseable {
     public PhotoSet getPhotos(double latitude, double longitude) {
         List<ImageMetadata> images = null;
         try (DatabaseConnection db = new DatabaseConnection()) {
-            images = db.getPhotosAround(latitude, LATITUDE_DELTA, longitude, LONGITUDE_DELTA);
+            images = db.getPhotosAround(latitude, latitudeDelta, longitude, longitudeDelta);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -267,18 +286,14 @@ public class BucketHandler implements AutoCloseable {
         if (images == null) {
             throw new IllegalStateException("Images shouldn't be null");
         } else {
-
             List<PhotoResult> photoResults = new ArrayList<>();
 
             for (ImageMetadata image : images) {
-
                 Length distance = Geoid.WGS84.distance(WayPoint.of(image.getLatitude(), image.getLongitude()), WayPoint.of(latitude, longitude));
-
                 photoResults.add(new PhotoResult(image, distance.doubleValue()));
             }
 
             photoResults.sort(Comparator.comparingDouble(PhotoResult::getDistance));
-
             PhotoSet photoSet = new PhotoSet(latitude, longitude);
 
             for (PhotoResult result : photoResults) {

@@ -1,6 +1,8 @@
 package client;
 
-import org.junit.internal.runners.statements.Fail;
+import client.observers.CompletionObserver;
+import client.observers.FailureObserver;
+import client.observers.ProgressObserver;
 
 import java.io.File;
 import java.util.ArrayList;
