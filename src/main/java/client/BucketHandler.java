@@ -3,6 +3,7 @@ package client;
 import client.connections.LocalStorageConnection;
 import client.connections.S3Connection;
 import client.connections.StorageConnection;
+import client.connections.StorageType;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import io.jenetics.jpx.GPX;

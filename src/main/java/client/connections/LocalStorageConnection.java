@@ -1,7 +1,6 @@
 package client.connections;
 
 import client.FileHolder;
-import client.StorageType;
 
 import java.io.*;
 import java.nio.file.Path;

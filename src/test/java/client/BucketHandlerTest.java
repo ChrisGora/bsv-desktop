@@ -1,5 +1,6 @@
 package client;
 
+import client.connections.StorageType;
 import client.observers.CompletionObserver;
 import org.junit.Assert;
 import org.junit.Before;

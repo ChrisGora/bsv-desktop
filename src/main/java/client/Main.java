@@ -1,5 +1,6 @@
 package client;
 
+import client.connections.StorageType;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;

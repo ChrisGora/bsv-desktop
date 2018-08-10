@@ -1,7 +1,6 @@
 package client.connections;
 
 import client.FileHolder;
-import client.StorageType;
 
 /**
  * An interface for interacting with a photo file storage.

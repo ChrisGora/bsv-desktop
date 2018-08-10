@@ -1,7 +1,6 @@
 package client.connections;
 
 import client.FileHolder;
-import client.StorageType;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.regions.Regions;
