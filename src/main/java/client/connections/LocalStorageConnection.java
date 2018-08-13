@@ -7,6 +7,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
+/**
+ * Stores the photos in a local folder in the user's home directory:
+ * /HOME/BUCKET_NAME
+ *
+ * @author Chris Gora
+ * @version 1.0, 01.09.2018
+ */
 public class LocalStorageConnection extends StorageConnection {
 
 

@@ -15,7 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-//class S3Connection extends Task<Void> {
+/**
+ * Stores the photos in a bucket on the Amazon S3 Servers.
+ * The region has been hardcoded to EU_WEST_2 (EU London Servers)
+ *
+ * @author Chris Gora
+ * @version 1.0, 01.09.2018
+ */
 public class S3Connection extends StorageConnection {
 
     private static AmazonS3 s3 = null;
