@@ -34,7 +34,6 @@ public class ImageMetadataTest {
         assertEquals(5376, width);
         assertEquals(2688, height);
         assertEquals("0236451263344ab88f9940679b1dc59b", id);
-//        assertEquals();
 
         try {
             metadata.printMetadata(file);

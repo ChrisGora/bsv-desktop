@@ -1,8 +1,7 @@
 package client;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.junit.Test;
-import org.junit.Assert;
+import org.junit.*;
 
 
 import java.awt.*;
@@ -15,6 +14,23 @@ import java.util.List;
 import java.util.Set;
 
 public class DatabaseConnectionTest {
+
+    @BeforeClass
+    public static void setUp() throws SQLException {
+        deleteAll();
+    }
+
+    @AfterClass
+    public static void tearDown() throws SQLException {
+        deleteAll();
+    }
+
+    private static void deleteAll() throws SQLException {
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            db.deleteAll("test-bucket");
+            db.deleteAll("bristol-streetview-photos");
+        }
+    }
 
     @Test
     public void singleInsertTest() {

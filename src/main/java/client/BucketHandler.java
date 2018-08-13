@@ -253,6 +253,9 @@ public class BucketHandler implements AutoCloseable {
         doneUploads.sort(Comparator.comparing(file -> file.getMetadata().getPhotoDateTime()));
 
         for (FileHolder fileHolder : doneUploads) {
+
+            // FIXME: 13/08/18 Getter call on a getter!
+
             double longitude = fileHolder.getMetadata().getLongitude();
             double latitude = fileHolder.getMetadata().getLatitude();
             Instant instant = fileHolder.getMetadata().getPhotoDateTime().toInstant(ZoneOffset.ofTotalSeconds(0));
@@ -290,7 +293,8 @@ public class BucketHandler implements AutoCloseable {
             List<PhotoResult> photoResults = new ArrayList<>();
 
             for (ImageMetadata image : images) {
-                Length distance = Geoid.WGS84.distance(WayPoint.of(image.getLatitude(), image.getLongitude()), WayPoint.of(latitude, longitude));
+                final WayPoint wayPoint = WayPoint.of(latitude, longitude);
+                final Length distance = Geoid.WGS84.distance(WayPoint.of(image.getLatitude(), image.getLongitude()), wayPoint);
                 photoResults.add(new PhotoResult(image, distance.doubleValue()));
             }
 

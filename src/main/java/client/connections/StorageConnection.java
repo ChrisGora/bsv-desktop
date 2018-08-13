@@ -66,8 +66,6 @@ public abstract class StorageConnection {
      * Should be submitted as a Runnable and not executed on the main thread.
      */
     public abstract void removeAll();
-    // FIXME: 10/08/18 Callbacks are not in use here yet
-    // FIXME: 10/08/18 Implement remove all in S3
 
     // TODO: 10/08/18 Decide on how a downloaded file should be returned
 //    File getFile();

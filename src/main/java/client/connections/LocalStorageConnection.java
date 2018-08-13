@@ -75,7 +75,6 @@ public class LocalStorageConnection extends StorageConnection {
     public void removeFile() {
 
         Objects.requireNonNull(fileHolder.getFile(), "File was null");
-//        String source = fileHolder.getFile().getPath();
         String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
 

@@ -18,15 +18,15 @@ public class FileHolder {
     private String key;
     private String bucket;
 
-    private List<ProgressObserver> progressObservers;
-    private List<CompletionObserver> uploadCompletionObservers;
-    private List<FailureObserver> uploadFailureObservers;
+    private final List<ProgressObserver> progressObservers;
+    private final List<CompletionObserver> uploadCompletionObservers;
+    private final List<FailureObserver> uploadFailureObservers;
 
-    private List<CompletionObserver> dbUpdateCompletionObservers;
-    private List<FailureObserver> dbFailureObservers;
+    private final List<CompletionObserver> dbUpdateCompletionObservers;
+    private final List<FailureObserver> dbFailureObservers;
 
-    private List<CompletionObserver> removeCompletionObservers;
-    private List<FailureObserver> removeFailureObservers;
+    private final List<CompletionObserver> removeCompletionObservers;
+    private final List<FailureObserver> removeFailureObservers;
     FileHolder() {
         this.progressObservers = new ArrayList<>();
         this.uploadCompletionObservers = new ArrayList<>();

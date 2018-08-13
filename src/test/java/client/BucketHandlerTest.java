@@ -2,10 +2,7 @@ package client;
 
 import client.connections.StorageType;
 import client.observers.CompletionObserver;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TestName;
 
 import java.io.File;
@@ -26,15 +23,33 @@ public class BucketHandlerTest {
     public final TestName name = new TestName();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         error = null;
     }
 
-    private BucketHandler newTestUploader() {
+    @BeforeClass
+    public static void setUpClass() {
+        deleteAll();
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        deleteAll();
+    }
+
+    private static void deleteAll() {
+        final BucketHandler localBucketHandler = newTestUploader(StorageType.LOCAL);
+        final BucketHandler amazonBucketHandler = newTestUploader(StorageType.AMAZON);
+
+        localBucketHandler.deleteAll();
+        amazonBucketHandler.deleteAll();
+    }
+
+    private static BucketHandler newTestUploader() {
         return newTestUploader(StorageType.LOCAL);
     }
 
-    private BucketHandler newTestUploader(StorageType type) {
+    private static BucketHandler newTestUploader(StorageType type) {
         return new BucketHandler("bristol-streetview-photos", type, 10, 10);
     }
 
@@ -136,7 +151,7 @@ public class BucketHandlerTest {
     }
 
     private void onProgressUpdated(double progress) {
-        System.out.println("PROGRESS: " + progress);
+//        System.out.println("PROGRESS: " + progress);
     }
 
     private void onCompleted(FileHolder fileHolder) {

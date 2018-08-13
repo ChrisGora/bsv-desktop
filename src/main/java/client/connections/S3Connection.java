@@ -93,9 +93,11 @@ public class S3Connection extends StorageConnection {
 
         s3.listObjects(bucket).getObjectSummaries().forEach((s) -> keys.add(new DeleteObjectsRequest.KeyVersion(s.getKey())));
 
-        DeleteObjectsRequest request= new DeleteObjectsRequest(bucket).withKeys(keys);
-        request.setGeneralProgressListener(this::progressChanged);
-        s3.deleteObjects(request);
+        if (!keys.isEmpty()) {
+            DeleteObjectsRequest request= new DeleteObjectsRequest(bucket).withKeys(keys);
+            request.setGeneralProgressListener(this::progressChanged);
+            s3.deleteObjects(request);
+        }
     }
 
     private void progressChanged(ProgressEvent progressEvent) {
