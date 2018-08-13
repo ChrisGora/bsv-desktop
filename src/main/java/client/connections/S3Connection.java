@@ -1,13 +1,18 @@
 package client.connections;
 
 import client.FileHolder;
+import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 //class S3Connection extends Task<Void> {
@@ -76,23 +81,31 @@ public class S3Connection extends StorageConnection {
         String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
         DeleteObjectRequest request= new DeleteObjectRequest(bucket, key);
-        request.setGeneralProgressListener((progressEvent) -> {
-            boolean done = progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT;
-            if (done) fileHolder.onRemoveSuccess();
-            else {
-
-                boolean error = progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT
-                             || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT
-                             || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT;
-                if (error) fileHolder.onRemoveFailure(progressEvent.toString());
-            }
-        });
+        request.setGeneralProgressListener(this::progressChanged);
         s3.deleteObject(request);
     }
 
     @Override
     public void removeAll() {
-        throw new RuntimeException("Implement me!!!");
-        // TODO: 20/07/18 IMPLEMENT ME!!!!
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+
+        List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
+
+        s3.listObjects(bucket).getObjectSummaries().forEach((s) -> keys.add(new DeleteObjectsRequest.KeyVersion(s.getKey())));
+
+        DeleteObjectsRequest request= new DeleteObjectsRequest(bucket).withKeys(keys);
+        request.setGeneralProgressListener(this::progressChanged);
+        s3.deleteObjects(request);
+    }
+
+    private void progressChanged(ProgressEvent progressEvent) {
+        boolean done = progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT;
+        if (done) fileHolder.onRemoveSuccess();
+        else {
+            boolean error = progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT
+                    || progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT
+                    || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT;
+            if (error) fileHolder.onRemoveFailure(progressEvent.toString());
+        }
     }
 }

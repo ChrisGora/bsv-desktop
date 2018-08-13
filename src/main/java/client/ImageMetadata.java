@@ -119,7 +119,6 @@ public class ImageMetadata {
 //                e.printStackTrace();
 //            }
 
-            // TODO: 20/07/18 Set up code for extracting longitude and latitude
         } else {
             throw new ImageReadException("Not a Jpeg Image");
         }

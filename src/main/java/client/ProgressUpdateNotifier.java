@@ -1,5 +1,8 @@
 package client;
 
+public class ProgressUpdateNotifier {
+}
+    /*
 public class ProgressUpdateNotifier implements Runnable {
 
     private FileHolder fileHolder;
@@ -20,3 +23,5 @@ public class ProgressUpdateNotifier implements Runnable {
         fileHolder.onBytesUploaded(bytesTransfered);
     }
 }
+
+    */

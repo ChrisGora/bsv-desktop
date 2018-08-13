@@ -108,7 +108,7 @@ public class BucketHandlerTest {
                         bucketHandler.upload(upload);
 
                         synchronized (completionObserver) {
-                            completionObserver.wait(5000); // TODO: 31/07/18 Ask Sion for help
+                            completionObserver.wait(5000);
                         }
 
                     }
@@ -136,7 +136,7 @@ public class BucketHandlerTest {
     }
 
     private void onProgressUpdated(double progress) {
-//        System.out.println("PROGRESS: " + progress);
+        System.out.println("PROGRESS: " + progress);
     }
 
     private void onCompleted(FileHolder fileHolder) {
@@ -152,8 +152,6 @@ public class BucketHandlerTest {
     @Test
     public void uploadAssertionsTest() throws SQLException, InterruptedException {
 
-        // FIXME: 06/08/18 Still not working properly - likey due to sync (?)
-
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll("bristol-streetview-photos");
         }
@@ -166,7 +164,6 @@ public class BucketHandlerTest {
         try (DatabaseConnection db = new DatabaseConnection()) {
             images = db.getPhotosTakenOn(LocalDateTime.of(2017, Month.JANUARY, 1, 0, 0, 52));
         }
-
 
         Objects.requireNonNull(images, "images were null");
         Assert.assertEquals("Incorrect array size", 1, images.size());
