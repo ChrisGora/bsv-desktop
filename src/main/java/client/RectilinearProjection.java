@@ -1,5 +1,8 @@
 package client;
 
+import javafx.util.Pair;
+import org.ejml.simple.SimpleMatrix;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -37,4 +40,19 @@ public class RectilinearProjection {
         this.roll = roll;
     }
 
+    private SimpleMatrix getRotatedMatrix(double rotateX, double rotateY, double rotateZ) {
+        throw new IllegalStateException("Implement me!");
+    }
+
+    /**
+     * Determines and returns corresponding position in the equirectangular panorama
+     */
+    private Pair<Double, Double> getPanoramaPosition(int outputX, int outputY, SimpleMatrix rotationMatrix, SimpleMatrix cameraMatrix) {
+//        Also uses focal length (f), pano width (w1), pano height (h1)
+        throw new IllegalStateException("Implement me!");
+    }
+
+    private double getRadians(double degrees){
+        return degrees * PI / 180;
+    }
 }
