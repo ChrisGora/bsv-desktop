@@ -60,7 +60,7 @@ public class BucketHandler implements AutoCloseable {
         this.latitudeDelta = latitudeDelta;
         this.longitudeDelta = longitudeDelta;
 
-        // FIXME: 09/08/18 Remove the debuggin executor and use standard executor for real life
+        // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
         this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
         this.doneUploads = new ArrayList<>();
 
@@ -113,7 +113,6 @@ public class BucketHandler implements AutoCloseable {
         String id = null;
         id = metadata.getId();
 
-
         if (id == null) {
 //            System.out.println("Image ID was null");
             if (upload.getFile().getName().contains("_E")) {
@@ -127,7 +126,7 @@ public class BucketHandler implements AutoCloseable {
             }
         }
 
-        String key = id + "-" + upload.getFile().getName();
+        final String key = id + "-" + upload.getFile().getName();
         System.out.println(key);
 
         upload.setKey(key);
@@ -324,6 +323,7 @@ public class BucketHandler implements AutoCloseable {
         String getId() {
             return id;
         }
+
 
         double getDistance() {
             return distance;
