@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Main extends Application {
+public class MainGUI extends Application {
 
     private BucketHandler bucketHandler;
     private Pane rootGroup;

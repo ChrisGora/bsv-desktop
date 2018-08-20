@@ -13,6 +13,7 @@ import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import com.drew.metadata.xmp.XmpDirectory;
+import com.google.gson.Gson;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
@@ -24,6 +25,8 @@ import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -38,6 +41,9 @@ public class ImageMetadata {
     private LocalDateTime photoDateTime;
     private double latitude;
     private double longitude;
+    private double locationAccuracy;
+    private double bearing;
+    private double bearingAccuracy;
     private String serialNumber;
 
 
@@ -52,8 +58,29 @@ public class ImageMetadata {
     }
 
     public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
+        assert(file.getName().contains(".jpg"));
         readJpegMetadata(file);
         readExifMetadata(file);
+    }
+
+    public ImageMetadata(File image, File jsonInfo) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
+        this(image);
+        assert(jsonInfo.getName().contains(".json"));
+        readJsonMetadata(jsonInfo);
+    }
+
+    /**
+     * Must be called after reading jpeg and exif metadata!
+     *
+     * @param file Json file to read in
+     */
+    private void readJsonMetadata(File file) throws IOException {
+        String jsonString = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+        ExtraPhotoInfo extraPhotoInfo = new Gson().fromJson(jsonString, ExtraPhotoInfo.class);
+        assert (this.id.equals(extraPhotoInfo.getId()));
+        this.bearing = extraPhotoInfo.getBearing();
+        this.bearingAccuracy = extraPhotoInfo.getBearingAccuracy();
+        this.locationAccuracy = extraPhotoInfo.getLocationAccuracy();
     }
 
     private void readJpegMetadata(File file) throws ImageProcessingException, IOException, MetadataException {
@@ -62,7 +89,6 @@ public class ImageMetadata {
         ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
         this.height= jpegDirectory.getImageHeight();
         this.width = jpegDirectory.getImageWidth();
-
     }
 
     private void readExifMetadata(File file) throws ImageReadException, IOException {
@@ -250,5 +276,17 @@ public class ImageMetadata {
 
     public String getSerialNumber() {
         return serialNumber;
+    }
+
+    public double getLocationAccuracy() {
+        return locationAccuracy;
+    }
+
+    public double getBearing() {
+        return bearing;
+    }
+
+    public double getBearingAccuracy() {
+        return bearingAccuracy;
     }
 }
