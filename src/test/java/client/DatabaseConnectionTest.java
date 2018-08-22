@@ -48,7 +48,10 @@ public class DatabaseConnectionTest {
                     "12345567",
                     12,
                     "test-bucket",
-                    "test-key"
+                    "test-key",
+                    0.0,
+                    0.0,
+                    0.0
             );
 
             Assert.assertEquals("DB result doesn't match", 1, result);
@@ -77,7 +80,10 @@ public class DatabaseConnectionTest {
                     "12345567",
                     12,
                     "test-bucket",
-                    "test-key"
+                    "test-key",
+                    0.0,
+                    0.0,
+                    0.0
             );
 
             Assert.assertEquals("DB result doesn't match", 1, result);
@@ -94,7 +100,10 @@ public class DatabaseConnectionTest {
                     "12345567",
                     11,
                     "test-bucket",
-                    "test-key-2"
+                    "test-key-2",
+                    0.0,
+                    0.0,
+                    0.0
             );
 
             Assert.assertEquals("DB result doesn't match", 1, result);
@@ -111,7 +120,10 @@ public class DatabaseConnectionTest {
                     "12345567",
                     11,
                     "test-bucket",
-                    "test-key-3"
+                    "test-key-3",
+                    0.0,
+                    0.0,
+                    0.0
             );
 
             Assert.assertEquals("DB result doesn't match", 1, result);
@@ -128,7 +140,10 @@ public class DatabaseConnectionTest {
                     "12345567",
                     11,
                     "test-bucket",
-                    "test-key-4"
+                    "test-key-4",
+                    0.0,
+                    0.0,
+                    0.0
             );
 
             Assert.assertEquals("DB result doesn't match", 1, result);

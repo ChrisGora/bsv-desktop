@@ -106,10 +106,15 @@ public class Projection2 {
                 double latitude = toDegrees(phi);
 
 
-                int geoPixelX = getInt((longitude + 180) * geoW);
-                int geoPixelY = getInt((latitude + 90) * geoH);
+                int geoPixelX = getInt((longitude + 180) * geoW / 360);
+                int geoPixelY = getInt((latitude + 90) * geoH / 360);
 
-                newImage.setRGB(geoPixelX, geoPixelY, rgb);
+//                System.out.println(geoPixelX);
+//                System.out.println(geoPixelY);
+
+                if (geoPixelX < geoW && geoPixelY < geoH) {
+                    newImage.setRGB(geoPixelX, geoPixelY, rgb);
+                }
 
                 y++;
             }

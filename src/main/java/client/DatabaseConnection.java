@@ -124,7 +124,10 @@ class DatabaseConnection implements AutoCloseable {
                 metadata.getSerialNumber(),
                 routeId,
                 bucketName,
-                key
+                key,
+                metadata.getLocationAccuracy(),
+                metadata.getBearing(),
+                metadata.getBearingAccuracy()
         );
     }
     
@@ -139,13 +142,16 @@ class DatabaseConnection implements AutoCloseable {
                        String cameraSerialNumber,
                        int routeId,
                        String bucketName,
-                       String key
+                       String key,
+                       double locationAccuracy,
+                       double bearing,
+                       double bearingAccuracy
     ) throws SQLException {
 
         String sql = "INSERT INTO Photo " +
-                "(id, height, width, photoTimestamp, uploadTimestamp, latitude, longitude, cameraSerialNumber, routeId, bucketName, fileKey) " +
+                "(id, height, width, photoTimestamp, uploadTimestamp, latitude, longitude, cameraSerialNumber, routeId, bucketName, fileKey, locationAccuracy, bearing, bearingAccuracy) " +
                 "VALUES " +
-                "(?,?,?,?,?,?,?,?,?,?,?)";
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         int n = -1;
 
@@ -165,6 +171,9 @@ class DatabaseConnection implements AutoCloseable {
             statement.setInt(9, routeId);
             statement.setString(10, bucketName);
             statement.setString(11, key);
+            statement.setDouble(12, locationAccuracy);
+            statement.setDouble(13, bearing);
+            statement.setDouble(14, bearingAccuracy);
 
             n = statement.executeUpdate();
 

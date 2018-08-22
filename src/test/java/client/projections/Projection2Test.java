@@ -16,14 +16,14 @@ public class Projection2Test {
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
         Projection2 p = new Projection2(
                 file,
-                1200,
-                2000,
+                0,
+                1000,
                 500,
-                1500,
+                2000,
+                40,
                 70,
-                70,
-                10,
-                10
+                -10,
+                -10
         );
 
         p.transform();

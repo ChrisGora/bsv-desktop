@@ -99,7 +99,26 @@ public class BucketHandler implements AutoCloseable {
 
         ImageMetadata metadata = null;
         try {
-            metadata = new ImageMetadata(upload.getFile());
+            String jsonPath = null;
+            if (upload.getFile().getName().contains("_E.jpg")) {
+                jsonPath = upload.getFile().getAbsolutePath().replace("_E.jpg", "_I.json");
+            } else if (upload.getFile().getName().contains(".jpg")) {
+                jsonPath = upload.getFile().getAbsolutePath().replace(".jpg", "_I.json");
+            }
+
+            File json = null;
+
+            if (jsonPath != null) {
+                json = new File(jsonPath);
+            }
+
+            System.out.println("JSON: " + json.getAbsolutePath());
+            if (json != null && json.exists()) {
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JSON EXISTS");
+                metadata = new ImageMetadata(upload.getFile(), json);
+            } else {
+                metadata = new ImageMetadata(upload.getFile());
+            }
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
             e.printStackTrace();
             upload.onUploadFailure(e.toString());
