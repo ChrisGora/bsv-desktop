@@ -1,5 +1,6 @@
 package client;
 
+import java.io.File;
 import java.util.Objects;
 
 public class FilePath {
@@ -23,6 +24,6 @@ public class FilePath {
     }
 
     public String getPath() {
-        return bucket + "/" + key;
+        return bucket + File.separator + key;
     }
 }

@@ -38,15 +38,15 @@ public class MainTerminal {
 
             int i = 3;
             while (i < n) {
-                switch (args[n]) {
-                    case UPLOAD_360_COMMAND:        upload360(n, args);
-                                                    break;
-                    case UPLOAD_SINGLE_COMMAND:     uploadSingle(n, args);
-                                                    break;
-                    case UPLOAD_MULTIPLE_COMMAND:   uploadMultiple(n, args);
-                                                    break;
-                    case SAVE_ROUTE_COMMAND:        saveRoute(n, args);
-                }
+//                switch (args[n]) {
+//                    case UPLOAD_360_COMMAND:        upload360(n, args);
+//                                                    break;
+//                    case UPLOAD_SINGLE_COMMAND:     uploadSingle(n, args);
+//                                                    break;
+//                    case UPLOAD_MULTIPLE_COMMAND:   uploadMultiple(n, args);
+//                                                    break;
+//                    case SAVE_ROUTE_COMMAND:        saveRoute(n, args);
+//                }
             }
         }
     }
