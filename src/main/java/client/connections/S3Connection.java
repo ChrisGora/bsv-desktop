@@ -10,10 +10,14 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Point;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Stores the photos in a bucket on the Amazon S3 Servers.
@@ -115,5 +119,15 @@ public class S3Connection extends StorageConnection {
                     || progressEvent.getEventType() == ProgressEventType.TRANSFER_PART_FAILED_EVENT;
             if (error) fileHolder.onRemoveFailure(progressEvent.toString());
         }
+    }
+
+    @Override
+    public Optional<RTree<String, Geometry>> getRTree() {
+        throw new RuntimeException("Implement me!");
+    }
+
+    @Override
+    public void saveRTree(RTree<String, Geometry> tree) {
+        throw new RuntimeException("Implement me!");
     }
 }

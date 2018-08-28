@@ -39,10 +39,10 @@ public class BucketHandlerTest {
 
     private static void deleteAll() {
         final BucketHandler localBucketHandler = newTestUploader(StorageType.LOCAL);
-        final BucketHandler amazonBucketHandler = newTestUploader(StorageType.AMAZON);
+//        final BucketHandler amazonBucketHandler = newTestUploader(StorageType.AMAZON);
 
         localBucketHandler.deleteAll();
-        amazonBucketHandler.deleteAll();
+//        amazonBucketHandler.deleteAll();
     }
 
     private static BucketHandler newTestUploader() {

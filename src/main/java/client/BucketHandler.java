@@ -6,6 +6,9 @@ import client.connections.StorageConnection;
 import client.connections.StorageType;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
+import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Point;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Length;
 import io.jenetics.jpx.WayPoint;
@@ -47,6 +50,7 @@ public class BucketHandler implements AutoCloseable {
     private final String bucket;
     private final StorageType type;
 
+    private RTree<String, Geometry> rTree;
     private ExecutorService executor;
     private List<FileHolder> doneUploads;
 
@@ -60,6 +64,7 @@ public class BucketHandler implements AutoCloseable {
         this.latitudeDelta = latitudeDelta;
         this.longitudeDelta = longitudeDelta;
 
+        this.rTree = getRTree();
         // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
         this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
         this.doneUploads = new ArrayList<>();
@@ -87,6 +92,21 @@ public class BucketHandler implements AutoCloseable {
     @Override
     public void close() {
         executor.shutdown();
+    }
+
+    private RTree<String, Geometry> getRTree() {
+        FileHolder fileHolder = new FileHolder();
+        fileHolder.setBucket(bucket);
+        Optional<RTree<String, Geometry>> optionalTree = getStorageConnection(fileHolder).getRTree();
+        return optionalTree.orElseGet(this::newRTree);
+    }
+
+    private RTree<String, Geometry> newRTree() {
+        return RTree.create();
+    }
+
+    private void saveRTree() {
+
     }
 
     public FileHolder newFileHolder(File file) {

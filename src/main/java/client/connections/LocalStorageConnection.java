@@ -1,11 +1,18 @@
 package client.connections;
 
 import client.FileHolder;
+import com.github.davidmoten.rtree.InternalStructure;
+import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.Serializer;
+import com.github.davidmoten.rtree.Serializers;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Point;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Stores the photos in a local folder in the user's home directory:
@@ -119,5 +126,38 @@ public class LocalStorageConnection extends StorageConnection {
             }
         } else throw new AssertionError("File does not exist");
 
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Override
+    public Optional<RTree<String, Geometry>> getRTree() {
+        File rTree = getRTreeFile();
+        try {
+            if (rTree != null && rTree.exists()) {
+                RTree<String, Geometry> tree = Serializers.flatBuffers().utf8().read(new FileInputStream(rTree), rTree.length(), InternalStructure.DEFAULT);
+                return Optional.of(tree);
+            } else {
+                return Optional.empty();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public void saveRTree(RTree<String, Geometry> tree) {
+        File rTree = Objects.requireNonNull(getRTreeFile());
+
+    }
+
+    private File getRTreeFile() {
+        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String key = Objects.requireNonNull(RTREE_FILE, "Key was null");
+
+        Path filePath = Paths.get(System.getProperty("user.home"), bucket, key);
+        String filePathString = filePath.toString();
+
+        return new File(filePathString);
     }
 }

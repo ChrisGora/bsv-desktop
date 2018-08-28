@@ -1,6 +1,12 @@
 package client.connections;
 
 import client.FileHolder;
+import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Point;
+
+import java.util.Optional;
 
 /**
  * An interface for interacting with a photo file storage.
@@ -14,6 +20,7 @@ import client.FileHolder;
  */
 public abstract class StorageConnection {
 
+    static final String RTREE_FILE = "rtree.tree";
     final FileHolder fileHolder;
     private final StorageType type;
 
@@ -66,6 +73,11 @@ public abstract class StorageConnection {
      * Should be submitted as a Runnable and not executed on the main thread.
      */
     public abstract void removeAll();
+
+
+    public abstract Optional<RTree<String, Geometry>> getRTree();
+
+    public abstract void saveRTree(RTree<String, Geometry> tree);
 
     // TODO: 10/08/18 Decide on how a downloaded file should be returned
 //    File getFile();
