@@ -6,9 +6,13 @@ import client.connections.StorageConnection;
 import client.connections.StorageType;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
+import com.github.davidmoten.grumpy.core.Position;
+import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.geometry.Geometries;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Point;
+import com.github.davidmoten.rtree.geometry.Rectangle;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Length;
 import io.jenetics.jpx.WayPoint;
@@ -24,9 +28,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 /**
  * Manipulates a bucket storing the 360 photos and the associated database.
@@ -49,9 +52,8 @@ public class BucketHandler implements AutoCloseable {
     private final double longitudeDelta;
     private final String bucket;
     private final StorageType type;
-
-    private RTree<String, Geometry> rTree;
     private ExecutorService executor;
+    private SpatialDatabaseConnection spatialDatabaseConnection;
     private List<FileHolder> doneUploads;
 
     BucketHandler(String bucket, StorageType type) {
@@ -63,10 +65,10 @@ public class BucketHandler implements AutoCloseable {
         this.bucket = bucket;
         this.latitudeDelta = latitudeDelta;
         this.longitudeDelta = longitudeDelta;
-
-        this.rTree = getRTree();
+        this.spatialDatabaseConnection = new SpatialDatabaseConnection();
         // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
-        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
+//        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
+        this.executor = Executors.newWorkStealingPool(4);
         this.doneUploads = new ArrayList<>();
 
     }
@@ -94,24 +96,16 @@ public class BucketHandler implements AutoCloseable {
         executor.shutdown();
     }
 
-    private RTree<String, Geometry> getRTree() {
-        FileHolder fileHolder = new FileHolder();
-        fileHolder.setBucket(bucket);
-        Optional<RTree<String, Geometry>> optionalTree = getStorageConnection(fileHolder).getRTree();
-        return optionalTree.orElseGet(this::newRTree);
-    }
-
-    private RTree<String, Geometry> newRTree() {
-        return RTree.create();
-    }
-
-    private void saveRTree() {
-
-    }
-
     public FileHolder newFileHolder(File file) {
         FileHolder fileHolder = new FileHolder();
         fileHolder.setFile(file);
+//        fileHolder.setBucket(bucket);
+        return fileHolder;
+    }
+
+    public FileHolder newEmptyFileHolder() {
+        FileHolder fileHolder = new FileHolder();
+        fileHolder.setBucket(bucket);
         return fileHolder;
     }
 
@@ -370,6 +364,63 @@ public class BucketHandler implements AutoCloseable {
 
         ImageMetadata getImageMetadata() {
             return imageMetadata;
+        }
+    }
+
+    private class SpatialDatabaseConnection {
+
+        private RTree<String, Geometry> tree;
+
+        SpatialDatabaseConnection() {
+            this.tree = getRTree();
+        }
+
+        private RTree<String, Geometry> getRTree() {
+            FileHolder fileHolder = new FileHolder();
+            fileHolder.setBucket(bucket);
+            Optional<RTree<String, Geometry>> optionalTree = getStorageConnection(fileHolder).getRTree();
+            return optionalTree.orElseGet(this::newRTree);
+        }
+
+        private RTree<String, Geometry> newRTree() {
+            return RTree.create();
+        }
+
+        void add(String id, double latitude, double longitude) {
+            tree = tree.add(id, Geometries.point(latitude, longitude));
+        }
+
+        List<String> get(double latitude, double longitude, double deltaMeters) {
+            return get(latitude, longitude, deltaMeters, 100);
+        }
+
+        List<String> get(double latitude, double longitude, double deltaMeters, int maxResults) {
+
+        }
+
+        private Observable<Entry<String, Geometry>> search(RTree<String, Geometry> tree, Point lonLat, final double distanceMeters) {
+            // First we need to calculate an enclosing lat long rectangle for this
+            // distance then we refine on the exact distance
+            final Position from = Position.create(lonLat.y(), lonLat.x());
+            Rectangle bounds = createBounds(from, distanceMeters);
+
+            return tree
+                    // do the first search using the bounds
+                    .search(bounds)
+                    // refine using the exact distance
+                    .filter(new Func1<Entry<T, Point>, Boolean>() {
+                        @Override
+                        public Boolean call(Entry<T, Point> entry) {
+                            Point p = entry.geometry();
+                            Position position = Position.create(p.y(), p.x());
+                            return from.getDistanceToKm(position) < distanceMeters;
+                        }
+                    });
+        }
+
+        void saveRTree() {
+
+//            getStorageConnection()
         }
     }
 

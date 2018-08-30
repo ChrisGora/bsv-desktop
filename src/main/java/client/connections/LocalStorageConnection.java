@@ -116,8 +116,8 @@ public class LocalStorageConnection extends StorageConnection {
 
         // FIXME: 06/08/18 Refactor to use the callbacks instead
 
+        if (!folder.exists()) return;
         if ((!folder.isDirectory())) throw new AssertionError("File was not a directory");
-
         if (folder.exists()) {
             File[] files = folder.listFiles();
             Objects.requireNonNull(files, "List of files was null");

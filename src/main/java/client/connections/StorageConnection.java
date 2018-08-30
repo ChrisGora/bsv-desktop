@@ -74,9 +74,10 @@ public abstract class StorageConnection {
      */
     public abstract void removeAll();
 
-
+    // TODO: 30/08/18 Javadoc
     public abstract Optional<RTree<String, Geometry>> getRTree();
 
+    // TODO: 30/08/18 Javadoc
     public abstract void saveRTree(RTree<String, Geometry> tree);
 
     // TODO: 10/08/18 Decide on how a downloaded file should be returned
