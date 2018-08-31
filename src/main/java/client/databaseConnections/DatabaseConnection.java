@@ -171,6 +171,23 @@ public class DatabaseConnection implements AutoCloseable {
 
     }
 
+    public ImageMetadata getMetadata(String id) throws SQLException {
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+                "WHERE id = ? ";
+
+        ImageMetadata metadata;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, id);
+            ResultSet results = statement.executeQuery();
+
+            results.first();
+            metadata = newImageMetadata(results);
+        }
+
+        return metadata;
+    }
+
     public FilePath getPath(String id) throws SQLException {
         String sql = "SELECT bucketName, fileKey FROM Photo " +
                 "WHERE (id = ?);";
@@ -182,10 +199,6 @@ public class DatabaseConnection implements AutoCloseable {
             statement.setString(1, id);
             ResultSet results = statement.executeQuery();
 
-            int n = results.getFetchSize();
-            System.out.println("FETCH SIZE: " + n);
-
-//            while (results.next()) {
             results.first();
             bucket = results.getString("bucketName");
             key = results.getString("fileKey");

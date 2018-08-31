@@ -1,5 +1,6 @@
 package client;
 
+import client.handler.ConcreteBucketHandler;
 import client.storageConnections.StorageType;
 import client.handler.BucketHandler;
 import client.handler.FileHolder;
@@ -74,8 +75,8 @@ public class MainCLI {
         File[] files = directory.listFiles();
 
         BucketHandler bucketHandler;
-        if ("S3".equals(bucketType)) bucketHandler = new BucketHandler(bucketName, StorageType.AMAZON);
-        else if ("LOCAL".equals(bucketType)) bucketHandler = new BucketHandler(bucketName, StorageType.LOCAL);
+        if ("S3".equals(bucketType)) bucketHandler = new ConcreteBucketHandler(bucketName, StorageType.AMAZON);
+        else if ("LOCAL".equals(bucketType)) bucketHandler = new ConcreteBucketHandler(bucketName, StorageType.LOCAL);
         else throw new IllegalArgumentException("Incorrect bucket type");
 
         for (File file : Objects.requireNonNull(files)) {

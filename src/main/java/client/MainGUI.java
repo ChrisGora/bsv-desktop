@@ -1,7 +1,8 @@
 package client;
 
-import client.storageConnections.StorageType;
 import client.handler.BucketHandler;
+import client.handler.ConcreteBucketHandler;
+import client.storageConnections.StorageType;
 import client.handler.FileHolder;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -36,7 +37,7 @@ public class MainGUI extends Application {
     }
 
     public void start(Stage primaryStage) throws Exception {
-        this.bucketHandler = new BucketHandler("bristol-streetview-photos", StorageType.LOCAL);
+        this.bucketHandler = new ConcreteBucketHandler("bristol-streetview-photos", StorageType.LOCAL);
         FileChooser fileChooser = new FileChooser();
 
         primaryStage.setTitle("Database client");

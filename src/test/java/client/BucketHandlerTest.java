@@ -2,6 +2,7 @@ package client;
 
 import client.databaseConnections.DatabaseConnection;
 import client.databaseConnections.ImageMetadata;
+import client.handler.ConcreteBucketHandler;
 import client.storageConnections.StorageType;
 import client.handler.BucketHandler;
 import client.handler.FileHolder;
@@ -54,7 +55,7 @@ public class BucketHandlerTest {
     }
 
     private static BucketHandler newTestUploader(StorageType type) {
-        return new BucketHandler("bristol-streetview-photos", type, 10, 10);
+        return new ConcreteBucketHandler("bristol-streetview-photos", type, 10, 10);
     }
 
 //    @Test
