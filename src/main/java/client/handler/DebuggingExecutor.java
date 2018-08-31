@@ -1,4 +1,4 @@
-package client;
+package client.handler;
 
 import java.util.concurrent.*;
 

@@ -1,4 +1,4 @@
-package client;
+package client.databaseConnections;
 
 import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPIterator;
@@ -18,9 +18,8 @@ import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
-import org.apache.commons.imaging.formats.tiff.TiffImageData;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
-import org.apache.commons.imaging.formats.tiff.constants.*;
+import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
 
 import java.io.File;
@@ -57,16 +56,16 @@ public class ImageMetadata {
         this.serialNumber = serialNumber;
     }
 
-    public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
-        assert(file.getName().contains(".jpg"));
-        readJpegMetadata(file);
-        readExifMetadata(file);
-    }
-
     public ImageMetadata(File image, File jsonInfo) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
         this(image);
-        assert(jsonInfo.getName().contains(".json"));
+        assert (jsonInfo.getName().contains(".json"));
         readJsonMetadata(jsonInfo);
+    }
+
+    public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
+        assert (file.getName().contains(".jpg"));
+        readJpegMetadata(file);
+        readExifMetadata(file);
     }
 
     /**
@@ -87,7 +86,7 @@ public class ImageMetadata {
         Metadata metadata = ImageMetadataReader.readMetadata(file);
         JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
         ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-        this.height= jpegDirectory.getImageHeight();
+        this.height = jpegDirectory.getImageHeight();
         this.width = jpegDirectory.getImageWidth();
     }
 

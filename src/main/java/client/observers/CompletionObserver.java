@@ -1,6 +1,6 @@
 package client.observers;
 
-import client.FileHolder;
+import client.handler.FileHolder;
 
 public interface CompletionObserver {
 

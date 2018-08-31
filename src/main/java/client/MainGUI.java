@@ -1,6 +1,8 @@
 package client;
 
-import client.connections.StorageType;
+import client.storageConnections.StorageType;
+import client.handler.BucketHandler;
+import client.handler.FileHolder;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -102,9 +104,7 @@ public class MainGUI extends Application {
             fileChooser.setTitle("Upload multiple files");
             List<File> files = fileChooser.showOpenMultipleDialog(primaryStage);
             if (files != null) {
-                for (File file : files) {
-                    handleFile(primaryStage, file);
-                }
+                files.forEach((file) -> handleFile(primaryStage, file));
             }
         });
         return multipleFilesButton;
@@ -119,11 +119,11 @@ public class MainGUI extends Application {
             fileChooser.setTitle("Upload 360 photos");
             List<File> files = fileChooser.showOpenMultipleDialog(primaryStage);
             if (files != null) {
-                for (File file : files) {
+                files.forEach(file -> {
                     if (file.getPath().contains("_E.jpg")) {
                         handleFile(primaryStage, file);
                     }
-                }
+                });
             }
         });
         return photoUploadButton;

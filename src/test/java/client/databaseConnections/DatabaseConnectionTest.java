@@ -1,10 +1,8 @@
-package client;
+package client.databaseConnections;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.junit.*;
 
 
-import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -195,6 +193,7 @@ public class DatabaseConnectionTest {
 
     @Test
     public void getPhotoExactGPS() throws SQLException {
+
 
         List<ImageMetadata> images;
 

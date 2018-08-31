@@ -135,6 +135,13 @@
             <version>0.2.2</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/info.picocli/picocli -->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>3.5.2</version>
+        </dependency>
+
     </dependencies>
 
 

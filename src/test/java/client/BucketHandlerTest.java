@@ -1,6 +1,10 @@
 package client;
 
-import client.connections.StorageType;
+import client.databaseConnections.DatabaseConnection;
+import client.databaseConnections.ImageMetadata;
+import client.storageConnections.StorageType;
+import client.handler.BucketHandler;
+import client.handler.FileHolder;
 import client.observers.CompletionObserver;
 import org.junit.*;
 import org.junit.rules.TestName;
@@ -53,12 +57,12 @@ public class BucketHandlerTest {
         return new BucketHandler("bristol-streetview-photos", type, 10, 10);
     }
 
-    @Test
-    public void amazonSimpleUploadTest() throws InterruptedException {
-        simpleUploadTest(StorageType.AMAZON);
-        if (error != null) fail(error);
-        System.out.println(name.getMethodName() + ": PASSED");
-    }
+//    @Test
+//    public void amazonSimpleUploadTest() throws InterruptedException {
+//        simpleUploadTest(StorageType.AMAZON);
+//        if (error != null) fail(error);
+//        System.out.println(name.getMethodName() + ": PASSED");
+//    }
 
     @Test
     public void localSimpleUploadTest() throws InterruptedException {

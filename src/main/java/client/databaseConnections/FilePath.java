@@ -1,4 +1,4 @@
-package client;
+package client.databaseConnections;
 
 import java.io.File;
 import java.util.Objects;

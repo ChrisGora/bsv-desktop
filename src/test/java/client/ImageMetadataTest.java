@@ -1,5 +1,6 @@
 package client;
 
+import client.databaseConnections.ImageMetadata;
 import com.adobe.xmp.XMPException;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;

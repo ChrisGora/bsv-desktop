@@ -1,6 +1,6 @@
-package client;
+package client.databaseConnections;
 
-public class ExtraPhotoInfo {
+class ExtraPhotoInfo {
 
     private String id;
     private double locationAccuracy;

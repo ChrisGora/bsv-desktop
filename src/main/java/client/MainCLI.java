@@ -1,13 +1,13 @@
 package client;
 
-import client.connections.StorageType;
-import com.amazonaws.services.s3.model.Bucket;
+import client.storageConnections.StorageType;
+import client.handler.BucketHandler;
+import client.handler.FileHolder;
 
 import java.io.File;
-import java.util.List;
 import java.util.Objects;
 
-public class MainTerminal {
+public class MainCLI {
 
 
 
@@ -20,8 +20,8 @@ public class MainTerminal {
     private static final String UPLOAD_SINGLE_NAME = "Upload a single photo";
     private static final String UPLOAD_SINGLE_COMMAND = "-us";
 
-    private static final String UPLOAD_MULTIPLE_NAME = "Upload multiple photos";
-    private static final String UPLOAD_MULTIPLE_COMMAND = "-um";
+//    private static final String UPLOAD_MULTIPLE_NAME = "Upload multiple photos";
+//    private static final String UPLOAD_MULTIPLE_COMMAND = "-um";
 
     private static final String SAVE_ROUTE_NAME = "Save route";
     private static final String SAVE_ROUTE_COMMAND = "-r";
@@ -36,17 +36,18 @@ public class MainTerminal {
             String bucketName = args[1];
             String bucketType = args[2];
 
-            int i = 3;
-            while (i < n) {
-//                switch (args[n]) {
-//                    case UPLOAD_360_COMMAND:        upload360(n, args);
-//                                                    break;
-//                    case UPLOAD_SINGLE_COMMAND:     uploadSingle(n, args);
-//                                                    break;
-//                    case UPLOAD_MULTIPLE_COMMAND:   uploadMultiple(n, args);
-//                                                    break;
-//                    case SAVE_ROUTE_COMMAND:        saveRoute(n, args);
-//                }
+            if (bucketName != null && bucketType != null) {
+                int i = 3;
+                while (i < n) {
+                    switch (args[n]) {
+                        case UPLOAD_360_COMMAND:            upload360(n, args, bucketName, bucketType);
+                                                        break;
+                        case UPLOAD_SINGLE_COMMAND:         uploadSingle(n, args, bucketName, bucketType);
+                                                        break;
+                        case SAVE_ROUTE_COMMAND:        saveRoute(n, args, bucketName, bucketType);
+                                                        break;
+                    }
+                }
             }
         }
     }
@@ -58,7 +59,6 @@ public class MainTerminal {
         printHelpSingleLine(HELP_NAME, HELP_COMMAND);
         printHelpSingleLine(UPLOAD_360_NAME, UPLOAD_360_COMMAND);
         printHelpSingleLine(UPLOAD_SINGLE_NAME, UPLOAD_SINGLE_COMMAND);
-        printHelpSingleLine(UPLOAD_MULTIPLE_NAME, UPLOAD_MULTIPLE_COMMAND);
         printHelpSingleLine(SAVE_ROUTE_NAME, SAVE_ROUTE_COMMAND);
     }
 
@@ -91,9 +91,6 @@ public class MainTerminal {
 
     }
 
-    private static void uploadMultiple(int n, String[] args, String bucketName, String bucketType) {
-
-    }
 
     private static void saveRoute(int n, String[] args, String bucketName, String bucketType) {
 

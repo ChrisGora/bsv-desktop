@@ -1,10 +1,8 @@
-package client.connections;
+package client.storageConnections;
 
-import client.FileHolder;
+import client.handler.FileHolder;
 import com.github.davidmoten.rtree.RTree;
-import com.github.davidmoten.rtree.geometry.Geometries;
 import com.github.davidmoten.rtree.geometry.Geometry;
-import com.github.davidmoten.rtree.geometry.Point;
 
 import java.util.Optional;
 

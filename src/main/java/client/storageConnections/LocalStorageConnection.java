@@ -1,12 +1,10 @@
-package client.connections;
+package client.storageConnections;
 
-import client.FileHolder;
+import client.handler.FileHolder;
 import com.github.davidmoten.rtree.InternalStructure;
 import com.github.davidmoten.rtree.RTree;
-import com.github.davidmoten.rtree.Serializer;
 import com.github.davidmoten.rtree.Serializers;
 import com.github.davidmoten.rtree.geometry.Geometry;
-import com.github.davidmoten.rtree.geometry.Point;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -32,7 +30,7 @@ public class LocalStorageConnection extends StorageConnection {
     public void copyFile() {
         Objects.requireNonNull(fileHolder.getFile(), "File was null");
         String source = fileHolder.getFile().getPath();
-        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
 
         Path destinationPath = Paths.get(System.getProperty("user.home"), bucket, key);
@@ -52,7 +50,7 @@ public class LocalStorageConnection extends StorageConnection {
 
             if (mkdirSuccessful && !file.exists()) {
                 createFileSuccessful = file.createNewFile();
-            } else if (file.exists()){
+            } else if (file.exists()) {
                 fileHolder.onUploadFailure("Duplicate filename");
                 return;
             } else {
@@ -87,16 +85,14 @@ public class LocalStorageConnection extends StorageConnection {
 
     @Override
     public void removeFile() {
-
         Objects.requireNonNull(fileHolder.getFile(), "File was null");
-        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
 
         Path filePath = Paths.get(System.getProperty("user.home"), bucket, key);
         String filePathString = filePath.toString();
 
         File file = new File(filePathString);
-
         if (file.exists()) {
             boolean successful = file.delete();
             if (successful) fileHolder.onRemoveSuccess();
@@ -108,7 +104,7 @@ public class LocalStorageConnection extends StorageConnection {
 
     @Override
     public void removeAll() {
-        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         Path filePath = Paths.get(System.getProperty("user.home"), bucket);
         String filePathString = filePath.toString();
 
@@ -152,7 +148,7 @@ public class LocalStorageConnection extends StorageConnection {
     }
 
     private File getRTreeFile() {
-        String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(RTREE_FILE, "Key was null");
 
         Path filePath = Paths.get(System.getProperty("user.home"), bucket, key);

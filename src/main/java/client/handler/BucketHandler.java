@@ -1,18 +1,17 @@
-package client;
+package client.handler;
 
-import client.connections.LocalStorageConnection;
-import client.connections.S3Connection;
-import client.connections.StorageConnection;
-import client.connections.StorageType;
+import client.databaseConnections.ImageMetadata;
+import client.PhotoSet;
+import client.databaseConnections.DatabaseConnection;
+import client.storageConnections.LocalStorageConnection;
+import client.storageConnections.S3Connection;
+import client.storageConnections.StorageConnection;
+import client.storageConnections.StorageType;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
-import com.github.davidmoten.grumpy.core.Position;
-import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometries;
 import com.github.davidmoten.rtree.geometry.Geometry;
-import com.github.davidmoten.rtree.geometry.Point;
-import com.github.davidmoten.rtree.geometry.Rectangle;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Length;
 import io.jenetics.jpx.WayPoint;
@@ -26,8 +25,8 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+//import java.util.*;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,11 +55,11 @@ public class BucketHandler implements AutoCloseable {
     private SpatialDatabaseConnection spatialDatabaseConnection;
     private List<FileHolder> doneUploads;
 
-    BucketHandler(String bucket, StorageType type) {
+    public BucketHandler(String bucket, StorageType type) {
         this(bucket, type, 0.001, 0.001);
     }
 
-    BucketHandler(String bucket, StorageType type, double latitudeDelta, double longitudeDelta) {
+    public BucketHandler(String bucket, StorageType type, double latitudeDelta, double longitudeDelta) {
         this.type = type;
         this.bucket = bucket;
         this.latitudeDelta = latitudeDelta;
@@ -110,7 +109,48 @@ public class BucketHandler implements AutoCloseable {
     }
 
     public void upload(FileHolder upload) {
+        ImageMetadata metadata = getImageMetadata(upload);
+        if (metadata == null) return;
+        else upload.setMetadata(metadata);
 
+        System.out.println(metadata);
+
+        String id = getId(upload, metadata);
+        if (id == null) return;
+
+        upload.setKey(getKey(upload, id));
+        upload.setBucket(bucket);
+
+        StorageConnection storageConnection = getStorageConnection(upload);
+        executor.submit(storageConnection::copyFile);
+        upload.setUploadCompletionListener(this::updateDatabase);
+        upload.setUploadCompletionListener(doneUploads::add);
+    }
+
+    private String getKey(FileHolder upload, String id) {
+        return id + "-" + upload.getFile().getName();
+    }
+
+    private String getId(FileHolder upload, ImageMetadata metadata) {
+        String id = null;
+        id = metadata.getId();
+
+        if (id == null) {
+//            System.out.println("Image ID was null");
+            if (upload.getFile().getName().contains("_E")) {
+                upload.onUploadFailure("Image ID was null");
+                return null;
+            }
+
+            else {
+                id = UUID.randomUUID().toString().replace("-", "");
+                metadata.setId(id);
+            }
+        }
+        return id;
+    }
+
+    private ImageMetadata getImageMetadata(FileHolder upload) {
         ImageMetadata metadata = null;
         try {
             String jsonPath = null;
@@ -126,55 +166,19 @@ public class BucketHandler implements AutoCloseable {
                 json = new File(jsonPath);
             }
 
-            System.out.println("JSON: " + json.getAbsolutePath());
             if (json != null && json.exists()) {
                 System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JSON EXISTS");
                 metadata = new ImageMetadata(upload.getFile(), json);
             } else {
+                System.out.println("HERERERERE");
                 metadata = new ImageMetadata(upload.getFile());
             }
+            return metadata;
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
             e.printStackTrace();
             upload.onUploadFailure(e.toString());
-            return;
+            return null;
         }
-
-//        FileHolder upload = new FileHolder();
-//        upload.setFile(file);
-        upload.setMetadata(metadata);
-
-        String id = null;
-        id = metadata.getId();
-
-        if (id == null) {
-//            System.out.println("Image ID was null");
-            if (upload.getFile().getName().contains("_E")) {
-                upload.onUploadFailure("Image ID was null");
-                return;
-            }
-
-            else {
-                id = UUID.randomUUID().toString().replace("-", "");
-                metadata.setId(id);
-            }
-        }
-
-        final String key = id + "-" + upload.getFile().getName();
-        System.out.println(key);
-
-        upload.setKey(key);
-        upload.setBucket(bucket);
-
-//        Runnable storageConnection = new S3Connection(upload);
-        StorageConnection storageConnection = getStorageConnection(upload);
-
-//        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(storageConnection::copyFile);
-
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUBMITTED");
-        upload.setUploadCompletionListener(this::updateDatabase);
-        upload.setUploadCompletionListener(doneUploads::add);
-//        return upload;
     }
 
     private void updateDatabase(FileHolder upload) {
@@ -205,8 +209,6 @@ public class BucketHandler implements AutoCloseable {
 
                     StorageConnection storageConnection = getStorageConnection(upload);
                     executor.submit(storageConnection::removeFile);
-                    // TODO: 23/07/18 Remove the photo from file storage if it was rejected by the database
-
                 }
 
             } catch (SQLException e) {
@@ -395,28 +397,30 @@ public class BucketHandler implements AutoCloseable {
         }
 
         List<String> get(double latitude, double longitude, double deltaMeters, int maxResults) {
-
+            throw new RuntimeException("Implement me");
         }
 
-        private Observable<Entry<String, Geometry>> search(RTree<String, Geometry> tree, Point lonLat, final double distanceMeters) {
+/*        private Observable<Entry<String, Geometry>> search(RTree<String, Geometry> tree, Point lonLat, final double distanceMeters) {
             // First we need to calculate an enclosing lat long rectangle for this
             // distance then we refine on the exact distance
             final Position from = Position.create(lonLat.y(), lonLat.x());
-            Rectangle bounds = createBounds(from, distanceMeters);
-
+            // FIXME: 31/08/18
+//            Rectangle bounds = createBounds(from, distanceMeters);
             return tree
                     // do the first search using the bounds
                     .search(bounds)
                     // refine using the exact distance
-                    .filter(new Func1<Entry<T, Point>, Boolean>() {
+                    .filter(new Func1<Entry<String, Geometry>, Boolean>() {
                         @Override
-                        public Boolean call(Entry<T, Point> entry) {
-                            Point p = entry.geometry();
-                            Position position = Position.create(p.y(), p.x());
-                            return from.getDistanceToKm(position) < distanceMeters;
+                        public Boolean call(Entry<String, Geometry> entry) {
+                            Geometry p = entry.geometry();
+//                            Point p2;
+                            // FIXME: 31/08/18 Cast the geometry to a point?
+//                            Position position = Position.create(p.y(), p.x());
+//                            return from.getDistanceToKm(position) < (distanceMeters / 1000);
                         }
                     });
-        }
+        }*/
 
         void saveRTree() {
 

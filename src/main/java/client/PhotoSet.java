@@ -1,6 +1,6 @@
 package client;
 
-import com.google.common.collect.ImmutableList;
+import client.databaseConnections.ImageMetadata;
 
 import java.util.*;
 

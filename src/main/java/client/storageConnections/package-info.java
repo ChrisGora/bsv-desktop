@@ -4,4 +4,4 @@
  * @author Chris Gora
  * @version 1.0, 01.09.2018
  */
-package client.connections;
+package client.storageConnections;

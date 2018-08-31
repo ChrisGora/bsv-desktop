@@ -1,4 +1,4 @@
-package client.connections;
+package client.storageConnections;
 
 public enum StorageType {
     AMAZON, LOCAL
