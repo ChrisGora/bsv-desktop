@@ -17,7 +17,7 @@ public class PythonProjection {
             System.out.println(parser.nextToken());
         }
 
-test
+tes
 
 //        System.loadLibrary("JyNI");
 //        System.loadLibrary("JyNI-Loader");
