@@ -4,6 +4,8 @@ import client.handler.FileHolder;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometry;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -76,7 +78,7 @@ public abstract class StorageConnection {
     public abstract Optional<RTree<String, Geometry>> getRTree();
 
     // TODO: 30/08/18 Javadoc
-    public abstract void saveRTree(RTree<String, Geometry> tree);
+    public abstract void saveRTree(RTree<String, Geometry> tree) throws IOException;
 
     // TODO: 10/08/18 Decide on how a downloaded file should be returned
 //    File getFile();

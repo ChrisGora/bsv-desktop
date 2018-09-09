@@ -96,7 +96,7 @@ public class ConcreteBucketHandler implements BucketHandler {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         spatialDatabaseConnection.close();
         executor.shutdown();
     }
@@ -388,14 +388,16 @@ public class ConcreteBucketHandler implements BucketHandler {
         }
 
         @Override
-        public void close() {
+        public void close() throws IOException {
             saveRTree();
         }
 
-        void saveRTree() {
+        void saveRTree() throws IOException {
             // TODO: 31/08/18 Implement me
-            throw new RuntimeException("Implement me");
-//            getStorageConnection()
+//            throw new RuntimeException("Implement me");
+            FileHolder fileHolder = new FileHolder();
+            fileHolder.setBucket(bucket);
+            getStorageConnection(fileHolder).saveRTree(tree);
         }
 
         private RTree<String, Geometry> getRTree() {

@@ -144,8 +144,14 @@ public class LocalStorageConnection extends StorageConnection {
     }
 
     @Override
-    public void saveRTree(RTree<String, Geometry> tree) {
+    public void saveRTree(RTree<String, Geometry> tree) throws IOException {
         File rTree = Objects.requireNonNull(getRTreeFile());
+        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        String key = Objects.requireNonNull(RTREE_FILE, "Key was null");
+
+
+        // TODO: 09/09/18 test me
+        Serializers.flatBuffers().utf8().write(tree, new FileOutputStream(Paths.get(System.getProperty("user.home"), bucket, key).toFile()));
 
     }
 
