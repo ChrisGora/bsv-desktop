@@ -24,6 +24,8 @@ import java.util.Optional;
  * @author Chris Gora
  * @version 1.0, 01.09.2018
  */
+
+@Deprecated
 public class S3Connection extends StorageConnection {
 
     private static AmazonS3 s3 = null;
@@ -48,8 +50,6 @@ public class S3Connection extends StorageConnection {
         Objects.requireNonNull(fileHolder.getFile(), "File was null");
         String bucket  = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
-        System.out.println("Upload fileHolder method beginning thread: " + Thread.currentThread().getName());
-        System.out.println("request created");
             PutObjectRequest request = new PutObjectRequest(fileHolder.getBucket(), fileHolder.getKey(), fileHolder.getFile());
             request.setGeneralProgressListener((progressEvent) -> {
 

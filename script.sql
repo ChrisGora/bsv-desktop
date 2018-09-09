@@ -1,3 +1,16 @@
+
+USE mysql;
+UPDATE user SET plugin='mysql_native_password' WHERE User='root';
+ALTER USER 'root'@'localhost' IDENTIFIED BY '3Mc!^0aylO03L2!p';
+FLUSH PRIVILEGES;
+
+USE mysql;
+CREATE USER 'java-db-client'@'localhost' IDENTIFIED BY 'v1M4^qVAU!3084NF';
+GRANT ALL PRIVILEGES ON *.* TO 'java-db-client'@'localhost';
+FLUSH PRIVILEGES;
+
+CREATE SCHEMA `bristol_streetview_schema` ;
+USE bristol_streetview_schema;
 CREATE TABLE Photo
 (
   id                 CHAR(32)     NOT NULL

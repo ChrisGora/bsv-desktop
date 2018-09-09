@@ -1,5 +1,6 @@
 package client.databaseConnections;
 
+import client.util.Log;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.google.common.annotations.VisibleForTesting;
@@ -15,10 +16,7 @@ import java.util.Properties;
 
 public class DatabaseConnection implements AutoCloseable {
 
-    private static final DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
-    private static final String AWS_ACCESS_KEY = creds.getCredentials().getAWSAccessKeyId();
-    private static final String AWS_SECRET_KEY = creds.getCredentials().getAWSSecretKey();
-
+    private static final String TAG = "DatabaseConnection";
     //    private static final Region REGION = Region.getRegion(Regions.EU_WEST_2);
     private static final Regions REGION = Regions.EU_WEST_2;
     private static final String HOSTNAME = "localhost";
@@ -63,11 +61,10 @@ public class DatabaseConnection implements AutoCloseable {
             ResultSet results = statement.executeQuery();
             while (results.next()) {
                 String output = results.getString(1);
-//                System.out.println("DB : " + output);
                 if (!output.equals("Success!")) {
                     throw new SQLException("Database Success Message not received");
                 } else {
-                    System.out.println("DB Connection successfully opened");
+                    Log.v(TAG, "DB Connection successfully opened");
                 }
             }
         } catch (SQLException e) {
@@ -89,7 +86,7 @@ public class DatabaseConnection implements AutoCloseable {
     @Override
     public void close() throws SQLException {
         this.connection.close();
-        System.out.println("DB Connection closed");
+        Log.v(TAG, "DB Connection closed");
     }
 
     public int insertPhotoRow(
@@ -166,7 +163,6 @@ public class DatabaseConnection implements AutoCloseable {
 
         }
 
-        System.out.println("INSERT RESULT: " + n);
         return n;
 
     }
@@ -202,9 +198,6 @@ public class DatabaseConnection implements AutoCloseable {
             results.first();
             bucket = results.getString("bucketName");
             key = results.getString("fileKey");
-            System.out.println(bucket);
-            System.out.println(key);
-//            }
         }
 
         if (bucket == null || key == null) throw new SQLException("Bucket or key was null");
@@ -329,7 +322,7 @@ public class DatabaseConnection implements AutoCloseable {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, bucket);
             statement.execute();
-            System.out.println("DELETE ALL: Done");
+            Log.i(TAG, "DELETE ALL COMPLETED");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -403,7 +396,6 @@ public class DatabaseConnection implements AutoCloseable {
         URL url = DatabaseConnection.class.getClassLoader().getResource(SSL_CERTIFICATE);
         Objects.requireNonNull(url, "X509Certificate URL was null");
 
-        System.out.println(url);
 
         try (InputStream certInputStream = url.openStream()) {
             return (X509Certificate) certFactory.generateCertificate(certInputStream);

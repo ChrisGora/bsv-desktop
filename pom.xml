@@ -33,6 +33,13 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.5.0</version>
+            </plugin>
+
         </plugins>
     </build>
 
@@ -140,6 +147,12 @@
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
             <version>3.5.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>me.tongfei</groupId>
+            <artifactId>progressbar</artifactId>
+            <version>0.7.1</version>
         </dependency>
 
     </dependencies>

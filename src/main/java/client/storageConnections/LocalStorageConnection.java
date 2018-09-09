@@ -1,6 +1,7 @@
 package client.storageConnections;
 
 import client.handler.FileHolder;
+import client.util.Log;
 import com.github.davidmoten.rtree.InternalStructure;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.Serializers;
@@ -21,6 +22,7 @@ import java.util.Optional;
  */
 public class LocalStorageConnection extends StorageConnection {
 
+    private static final String TAG = "LocalStorageConnection";
 
     public LocalStorageConnection(FileHolder fileHolder) {
         super(fileHolder, StorageType.LOCAL);
@@ -63,7 +65,7 @@ public class LocalStorageConnection extends StorageConnection {
             fileHolder.onUploadFailure(e.toString());
         }
 
-        System.out.println(">>>>>>>>>>> DESTINATION: " + destination);
+        Log.v(TAG, "Ready to start uploading... FILE DESTINATION: " + destination);
 
         if (createFileSuccessful) {
             try (InputStream in = new FileInputStream(source); OutputStream out = new FileOutputStream(destination)) {

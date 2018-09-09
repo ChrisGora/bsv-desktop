@@ -85,7 +85,6 @@ public class FileHolder {
 
             if (progress == 1) {
                 for (CompletionObserver observer : uploadCompletionObservers) {
-                    System.out.println("Completion observer called");
                     observer.onDone(this);
                 }
             }

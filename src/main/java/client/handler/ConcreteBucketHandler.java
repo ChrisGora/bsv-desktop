@@ -7,6 +7,7 @@ import client.storageConnections.LocalStorageConnection;
 import client.storageConnections.S3Connection;
 import client.storageConnections.StorageConnection;
 import client.storageConnections.StorageType;
+import client.util.Log;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import com.github.davidmoten.grumpy.core.Position;
@@ -53,6 +54,8 @@ public class ConcreteBucketHandler implements BucketHandler {
 //    TODO: 09/08/18 Implement logic to keep track of routeIds
 //    Get the current highest route id from the database when the object is instantiated
 //    Provide a new 'increment rout id' method to increment the id manually - eg by the UI
+
+    private static final String TAG = "ConcreteBucketHandler";
 
     private final double latitudeDelta;
     private final double longitudeDelta;
@@ -119,8 +122,6 @@ public class ConcreteBucketHandler implements BucketHandler {
         if (metadata == null) return;
         else upload.setMetadata(metadata);
 
-        System.out.println(metadata);
-
         String id = getId(upload, metadata);
         if (id == null) return;
 
@@ -142,7 +143,6 @@ public class ConcreteBucketHandler implements BucketHandler {
         id = metadata.getId();
 
         if (id == null) {
-//            System.out.println("Image ID was null");
             if (upload.getFile().getName().contains("_E")) {
                 upload.onUploadFailure("Image ID was null");
                 return null;
@@ -173,10 +173,8 @@ public class ConcreteBucketHandler implements BucketHandler {
             }
 
             if (json != null && json.exists()) {
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JSON EXISTS");
                 metadata = new ImageMetadata(upload.getFile(), json);
             } else {
-                System.out.println("HERERERERE");
                 metadata = new ImageMetadata(upload.getFile());
             }
             return metadata;
@@ -193,9 +191,7 @@ public class ConcreteBucketHandler implements BucketHandler {
 
         executor.submit(() -> {
             try (DatabaseConnection db = new DatabaseConnection()) {
-                System.out.println("BucketHandler established a DB connection");
-//            System.out.println(upload.getBucket());
-//            System.out.println(upload.getKey());
+                Log.v(TAG, "Established a DB connection");
                 ImageMetadata metadata = upload.getMetadata();
                 int result = db.insertPhotoRow(
                         metadata,
@@ -210,8 +206,8 @@ public class ConcreteBucketHandler implements BucketHandler {
                 } else {
                     upload.onDbFailure("Database error - database returned: " + result);
 
-                    upload.setRemoveCompletionListener((f) -> System.out.println("REMOVE Done: " + f.getKey()));
-                    upload.setRemoveFailureListener(System.out::println);
+                    upload.setRemoveCompletionListener((f) -> Log.w(TAG, "REMOVE Done: " + f.getKey()));
+                    upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
 
                     StorageConnection storageConnection = getStorageConnection(upload);
                     executor.submit(storageConnection::removeFile);
@@ -221,8 +217,8 @@ public class ConcreteBucketHandler implements BucketHandler {
                 e.printStackTrace();
                 upload.onDbFailure(e.toString());
 
-                upload.setRemoveCompletionListener((f) -> System.out.println("REMOVE Done: " + f.getKey()));
-                upload.setRemoveFailureListener(System.out::println);
+                upload.setRemoveCompletionListener((f) -> Log.w(TAG, "REMOVE Done: " + f.getKey()));
+                upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
 
                 StorageConnection storageConnection = getStorageConnection(upload);
                 executor.submit(storageConnection::removeFile);
@@ -234,32 +230,26 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     @Override
     public int saveJustUploadedAsNewRoute(int routeId) {
-
         List<WayPoint> wayPoints = getWayPoints();
         GPX gpx = getGpx(wayPoints);
-
-        System.out.println("Waypoints size: " + wayPoints.size());
-        System.out.println("builder done");
         uploadGpx(routeId, gpx);
         return wayPoints.size();
     }
 
     private void uploadGpx(int routeId, GPX gpx) {
         try {
-            System.out.println("inside try");
             File tempFile = File.createTempFile("JPX" + routeId, ".gpx");
             GPX.write(gpx, tempFile.getPath());
 
             FileHolder fileHolder = newGpxFileHolder(routeId, tempFile);
 
             fileHolder.setUploadCompletionListener(f -> {
-                System.out.println("GPX UPLOAD DONE!!!");
+                Log.v(TAG, "GPX UPLOAD DONE");
                 doneUploads.clear();
                 tempFile.delete();
             });
 
-            fileHolder.setProgressListener(System.out::println);
-            fileHolder.setUploadFailureListener(System.out::println);
+            fileHolder.setUploadFailureListener((error) -> Log.e(TAG, "GPX file upload failure"));
 
             StorageConnection storageConnection = getStorageConnection(fileHolder);
             executor.submit(storageConnection::copyFile);
@@ -286,8 +276,6 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     private List<WayPoint> getWayPoints() {
         List<WayPoint> wayPoints = new ArrayList<>();
-
-        System.out.println("done size: " + doneUploads.size());
 
         doneUploads.sort(Comparator.comparing(file -> file.getMetadata().getPhotoDateTime()));
 

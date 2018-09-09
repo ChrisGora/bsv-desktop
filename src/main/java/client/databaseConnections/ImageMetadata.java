@@ -34,6 +34,8 @@ import java.util.Objects;
 
 public class ImageMetadata {
 
+    private static final String TAG = "ImageMetadata";
+
     private String id;
     private int height;
     private int width;
@@ -97,11 +99,7 @@ public class ImageMetadata {
 
             this.id = (String) getTagValue(metadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID);
 
-//            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-//            System.out.println(getTagValue(metadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID));
-
             String dateTimeString = (String) getTagValue(metadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
-            System.out.println(">>>>> DATE AS A STRING: " + dateTimeString);
 
 //            DateFormat dateFormat = new SimpleDateFormat();
 
@@ -109,8 +107,6 @@ public class ImageMetadata {
             if (dateTimeString != null) {
                 String dateString = dateTimeString.substring(0, 10).replace(":", "-");
                 String timeString = dateTimeString.substring(11);
-                System.out.println("DATE STRING: >" + dateString + "<");
-                System.out.println("TIME STRING: >" + timeString + "<");
 
 //                    DateTimeFormatter.ISO_LOCAL_DATE.parse(dateString);
 
@@ -121,9 +117,6 @@ public class ImageMetadata {
 
                 photoDateTime = LocalDateTime.of(localDate, localTime);
 
-                System.out.println("DATETIME: " + photoDateTime);
-
-
             }
 
             TiffImageMetadata tiffImageMetadata = metadata.getExif();
@@ -132,18 +125,8 @@ public class ImageMetadata {
                 if (gpsInfo != null) {
                     longitude = gpsInfo.getLongitudeAsDegreesEast();
                     latitude = gpsInfo.getLatitudeAsDegreesNorth();
-
-                    System.out.println("GPS!!!!!");
-                    System.out.println(longitude);
-                    System.out.println(latitude);
                 }
             }
-//                Date date = dateFormat.parse(dateTimeString);
-//                System.out.println(">>>>> DATE AS A STRING: v2: " + date);
-//            } catch (ParseException e) {
-//                e.printStackTrace();
-//            }
-
         } else {
             throw new ImageReadException("Not a Jpeg Image");
         }
@@ -156,73 +139,12 @@ public class ImageMetadata {
         } else return field.getValue();
     }
 
-
-
-
-/*    public ImageMetadata(File file) throws ImageProcessingException, IOException {
-
-        this.file = file;
-
-        Metadata metadata = ImageMetadataReader.readMetadata(file);
-
-        for (Directory directory : metadata.getDirectories()) {
-            for (Tag tag : directory.getTags()) {
-
-                int type = tag.getTagType();
-
-                switch (type) {
-                    case ExifDirectoryBase.TAG_IMAGE_UNIQUE_ID: {
-                        id = tag.getDescription();
-                        System.out.println(id);
-                        break;
-                    }
-                    case ExifDirectoryBase.TAG_EXIF_IMAGE_WIDTH: {
-                        width = Integer.parseInt(tag.getDescription().replace(" pixels", ""));
-                        System.out.println(width);
-                        break;
-                    }
-                    case ExifDirectoryBase.TAG_EXIF_IMAGE_HEIGHT: {
-                        height = Integer.parseInt(tag.getDescription().replace(" pixels", ""));
-                        System.out.println(height);
-                        break;
-                    }
-//                    case ExifDirectoryBase.TAG_DATETIME:
-                    // FIXME: 17/07/18 Replace the date/time field created by Ricoh with the date/time from the tablet!
-
-                    case ExifDirectoryBase.
-
-                }
-
-//                if (tag.getTagType() == ExifDirectoryBase.TAG_IMAGE_UNIQUE_ID) id = tag.getDescription();
-
-            }
-
-            if (directory.hasErrors()) {
-                for (String error : directory.getErrors()) {
-                    System.out.println("readImageMetadata: Metadata error: " + error);
-                }
-            }
-//            if (directory.getName().equals("XMP")) {
-//                System.out.println("readImageMetadata: XMP DETECTED");
-//                XmpDirectory xmpDirectory = (XmpDirectory) directory;
-//                XMPMeta xmpMeta = xmpDirectory.getXMPMeta();
-//                XMPIterator iterator = xmpMeta.iterator();
-//                while (iterator.hasNext()) {
-//                    XMPPropertyInfo info = (XMPPropertyInfo) iterator.next();
-//                    Objects.requireNonNull(info);
-//                    System.out.println("readImageMetadata: XMP: " + info.getPath() + " " + info.getValue());
-//                }
-//            }
-        }
-    }*/
-
     public void printMetadata(File file) throws ImageProcessingException, IOException, XMPException {
         Metadata metadata = ImageMetadataReader.readMetadata(file);
 
         for (Directory directory : metadata.getDirectories()) {
             for (Tag tag : directory.getTags()) {
                 System.out.println("readImageMetadata: " + directory.getName() + " " + tag.getTagName() + " " + tag.getDescription());
-//                System.out.println(tag.g);
             }
 
             if (directory.hasErrors()) {
