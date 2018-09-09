@@ -430,10 +430,10 @@ public class ConcreteBucketHandler implements BucketHandler {
         }
 
         List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadius, int maxResults) {
-            List<String> unsortedIds = new ArrayList<>();
+            List<String> ids = new ArrayList<>();
             Objects.requireNonNull(search(Geometries.point(latitude, longitude), searchRadius))
-                    .forEach((entry) -> unsortedIds.add(entry.value()));
-            return unsortedIds;
+                    .forEach((entry) -> ids.add(entry.value()));
+            return ids;
         }
 
         @Nullable
