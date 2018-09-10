@@ -15,3 +15,7 @@ PROJECT SETUP:
         mvn exec:java -D"exec.mainClass"="client.MainGUI"
 
 
+NOTES:
+
+- NEVER have two clients / two instances of the Bucket Handler running concurrently on the same bucket.
+    The images and the metadata database will survive - however the internal spatial database (RTree) will get destroyed.

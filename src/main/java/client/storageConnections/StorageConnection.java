@@ -4,6 +4,8 @@ import client.handler.FileHolder;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometry;
 
+import javax.annotation.Nullable;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Optional;
@@ -55,6 +57,13 @@ public abstract class StorageConnection {
     public abstract void copyFile();
 
     /**
+     * Copies the file into the output sub directory of the specified bucket.
+     *
+     * Should be submitted as a Runnable and not executed on the main thread.
+     */
+    public abstract void copyFileToOutput();
+
+    /**
      * Removes a file from the bucket.
      * Calls the following callback methods:
      *      <li> {@link FileHolder#onRemoveSuccess()}
@@ -73,6 +82,13 @@ public abstract class StorageConnection {
      * Should be submitted as a Runnable and not executed on the main thread.
      */
     public abstract void removeAll();
+
+    /**
+     * Returns a file for the given Image ID. The file may be null.
+     * This new file should be based on the bucket and key supplied with the file holder
+     */
+    @Nullable
+    public abstract File getFile(String key);
 
     // TODO: 30/08/18 Javadoc
     public abstract Optional<RTree<String, Geometry>> getRTree();

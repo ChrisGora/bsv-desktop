@@ -4,6 +4,7 @@ import client.handler.BucketHandler;
 import client.handler.ConcreteBucketHandler;
 import client.handler.FileHolder;
 import client.storageConnections.StorageType;
+import client.util.Log;
 import me.tongfei.progressbar.ProgressBar;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -24,6 +25,9 @@ public class MainCLI2 implements Callable<Void> {
     private boolean verbose = false;
     // TODO: 09/09/18 implement verbose
 
+    @Option(names = {"-d", "--debug"}, description = "Debugging output.")
+    private boolean debug = false;
+
     @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given uploadFolder.")
     private File uploadFolder;
 
@@ -43,14 +47,12 @@ public class MainCLI2 implements Callable<Void> {
     @Override
     public Void call() throws Exception {
 
-        System.out.println("WORKING");
-        System.out.println(bucket);
+        if (debug) Log.setDebugging();
+        if (verbose) Log.setVerbose();
 
         bucketHandler = new ConcreteBucketHandler(bucket, StorageType.LOCAL);
 
-        System.out.println(uploadFolder.isDirectory());
         if (uploadFolder != null && uploadFolder.isDirectory()) {
-            System.out.println("Here");
             File[] files = uploadFolder.listFiles();
             Objects.requireNonNull(files, "File array was null");
             List<File> filesList = Arrays.asList(files);
@@ -79,7 +81,7 @@ public class MainCLI2 implements Callable<Void> {
     }
 
     private void setDefaultListeners(FileHolder upload) {
-        upload.setUploadCompletionListener(this::onDone);
+//        upload.setUploadCompletionListener(this::onDone);
         upload.setUploadFailureListener(System.err::println);
 //
         upload.setDbUpdateCompletionListener(this::onDone);
@@ -90,19 +92,26 @@ public class MainCLI2 implements Callable<Void> {
     }
 
     private void setUpUploadProgressMonitoring(int n) {
-        pb = new ProgressBar("Processing...", n * 2);
+        pb = new ProgressBar("Processing...", n);
         numberOfImagesToProcess = n;
     }
 
-    private void onDone(FileHolder fh) {
+    private synchronized void onDone(FileHolder fh) {
         pb.step();
         done++;
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("DONE: " + fh.getKey());
         if (done == numberOfImagesToProcess) {
             try {
-                pb.close();
                 bucketHandler.close();
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                pb.close();
             }
         }
     }

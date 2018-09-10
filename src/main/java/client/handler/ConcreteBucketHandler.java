@@ -8,6 +8,7 @@ import client.storageConnections.S3Connection;
 import client.storageConnections.StorageConnection;
 import client.storageConnections.StorageType;
 import client.util.Log;
+import com.amazonaws.transform.MapEntry;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import com.github.davidmoten.grumpy.core.Position;
@@ -17,24 +18,28 @@ import com.github.davidmoten.rtree.geometry.Geometries;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Point;
 import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Length;
 import io.jenetics.jpx.WayPoint;
 import io.jenetics.jpx.geom.Geoid;
 import org.apache.commons.imaging.ImageReadException;
 import rx.Observable;
-import rx.functions.Func1;
 
 import javax.annotation.Nullable;
+import javax.xml.crypto.Data;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 //import java.util.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -57,8 +62,7 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     private static final String TAG = "ConcreteBucketHandler";
 
-    private final double latitudeDelta;
-    private final double longitudeDelta;
+    private final double searchRadiousMeters;
     private final String bucket;
     private final StorageType type;
     private ExecutorService executor;
@@ -66,14 +70,13 @@ public class ConcreteBucketHandler implements BucketHandler {
     private List<FileHolder> doneUploads;
 
     public ConcreteBucketHandler(String bucket, StorageType type) {
-        this(bucket, type, 0.001, 0.001);
+        this(bucket, type, 5000);
     }
 
-    public ConcreteBucketHandler(String bucket, StorageType type, double latitudeDelta, double longitudeDelta) {
+    public ConcreteBucketHandler(String bucket, StorageType type, double searchRadiousMeters) {
         this.type = type;
         this.bucket = bucket;
-        this.latitudeDelta = latitudeDelta;
-        this.longitudeDelta = longitudeDelta;
+        this.searchRadiousMeters = searchRadiousMeters;
         this.spatialDatabaseConnection = new SpatialDatabaseConnection();
         // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
 //        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
@@ -105,7 +108,7 @@ public class ConcreteBucketHandler implements BucketHandler {
     public FileHolder newFileHolder(File file) {
         FileHolder fileHolder = new FileHolder();
         fileHolder.setFile(file);
-//        fileHolder.setBucket(bucket);
+        fileHolder.setBucket(bucket);
         return fileHolder;
     }
 
@@ -126,7 +129,6 @@ public class ConcreteBucketHandler implements BucketHandler {
         if (id == null) return;
 
         upload.setKey(getKey(upload, id));
-        upload.setBucket(bucket);
 
         StorageConnection storageConnection = getStorageConnection(upload);
         executor.submit(storageConnection::copyFile);
@@ -202,6 +204,7 @@ public class ConcreteBucketHandler implements BucketHandler {
                 );
 
                 if (result == 1) {
+                    spatialDatabaseConnection.add(metadata.getId(), metadata.getLatitude(), metadata.getLongitude());
                     upload.onDbSuccess();
                 } else {
                     upload.onDbFailure("Database error - database returned: " + result);
@@ -304,13 +307,96 @@ public class ConcreteBucketHandler implements BucketHandler {
             e.printStackTrace();
         }
     }
+// --------------------------------------------------------------------------------------------------------------------
+
 
     @Override
+    public void savePhotosAround(double latitude, double longitude, int maxResults) throws IOException {
+        int i = 1;
+        PhotoSet set = getPhotosAround(latitude, longitude, maxResults);
+        for (String id : set.getIds()) {
+            FileHolder outputHolder = newEmptyFileHolder();
+            String fileKey = null;
+            try (DatabaseConnection db = new DatabaseConnection()) {
+                fileKey = db.getPath(id).getKey();
+                Objects.requireNonNull(fileKey, "Retrieved file key was null");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            StorageConnection storageConnection = getStorageConnection(outputHolder);
+            outputHolder.setFile(storageConnection.getFile(fileKey));
+            outputHolder.setKey(i + fileKey.substring(fileKey.lastIndexOf('.')));
+            System.out.println(outputHolder.getFile());
+            System.out.println(outputHolder.getKey());
+
+            executor.submit(storageConnection::copyFileToOutput);
+
+            File tempFile = File.createTempFile("bsv", ".json");
+            tempFile.deleteOnExit();
+
+            Gson gson = new Gson();
+            Writer writer = new FileWriter(tempFile);
+            gson.toJson(set.getImages().get(id), writer);
+
+            outputHolder = newFileHolder(tempFile);
+            outputHolder.setBucket(bucket);
+            outputHolder.setKey(i + ".json");
+
+            i++;
+        }
+    }
+
+    @Override
+    public void savePhotosTakenOn(LocalDateTime dateTime) {
+
+    }
+
+    @Override
+    public void savePhotosUploadedOn(LocalDateTime dateTime) {
+
+    }
+
+    @Override
+    public void savePhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+
+    }
+
+    @Override
+    public void savePhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+
+    }
+
+    @Override
+    public PhotoSet getPhotosTakenOn(LocalDateTime dateTime) {
+        return null;
+    }
+
+    @Override
+    public PhotoSet getPhotosUploadedOn(LocalDateTime dateTime) {
+        return null;
+    }
+
+    @Override
+    public PhotoSet getPhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+        return null;
+    }
+
+    @Override
+    public PhotoSet getPhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+        return null;
+    }
+
     @Nullable
-    public PhotoSet getPhotos(double latitude, double longitude) {
+    @Override
+    public PhotoSet getPhotosAround(double latitude, double longitude, int maxResults) {
         List<ImageMetadata> images = null;
-        try (DatabaseConnection db = new DatabaseConnection()) {
-            images = db.getPhotosAround(latitude, latitudeDelta, longitude, longitudeDelta);
+        try {
+            List<String> ids = spatialDatabaseConnection.getUnsortedImageIds(latitude, longitude, searchRadiousMeters, maxResults);
+            System.out.println(">>>>>>> UNSORTED IDS:");
+            System.out.println(ids);
+            images = getListOfMetadata(ids);
+            System.out.println(images);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -319,23 +405,27 @@ public class ConcreteBucketHandler implements BucketHandler {
         if (images == null) {
             throw new IllegalStateException("Images shouldn't be null");
         } else {
-            List<PhotoResult> photoResults = new ArrayList<>();
-
-            for (ImageMetadata image : images) {
-                final WayPoint wayPoint = WayPoint.of(latitude, longitude);
-                final Length distance = Geoid.WGS84.distance(WayPoint.of(image.getLatitude(), image.getLongitude()), wayPoint);
-                photoResults.add(new PhotoResult(image, distance.doubleValue()));
-            }
-
-            photoResults.sort(Comparator.comparingDouble(PhotoResult::getDistance));
-            PhotoSet photoSet = new PhotoSet(latitude, longitude);
-
-            for (PhotoResult result : photoResults) {
-                photoSet.add(result.getImageMetadata(), result.getDistance());
-            }
-            return photoSet;
+            return getPhotoSet(latitude, longitude, images);
         }
 
+    }
+
+    private PhotoSet getPhotoSet(double latitude, double longitude, List<ImageMetadata> images) {
+        List<PhotoResult> photoResults = new ArrayList<>();
+
+        for (ImageMetadata image : images) {
+            final WayPoint wayPoint = WayPoint.of(latitude, longitude);
+            final Length distance = Geoid.WGS84.distance(WayPoint.of(image.getLatitude(), image.getLongitude()), wayPoint);
+            photoResults.add(new PhotoResult(image, distance.doubleValue()));
+        }
+
+        photoResults.sort(Comparator.comparingDouble(PhotoResult::getDistance));
+        PhotoSet photoSet = new PhotoSet(latitude, longitude);
+
+        for (PhotoResult result : photoResults) {
+            photoSet.add(result.getImageMetadata(), result.getDistance());
+        }
+        return photoSet;
     }
 
     private List<ImageMetadata> getListOfMetadata(List<String> ids) throws SQLException {
@@ -344,7 +434,7 @@ public class ConcreteBucketHandler implements BucketHandler {
             for (String id : ids) {
                 ImageMetadata metadata = db.getMetadata(id);
                 if (metadata != null) metadataList.add(metadata);
-                else throw new IllegalStateException("Id not found in the database");
+                else throw new IllegalStateException("ID not found in the database");
             }
         }
         return metadataList;
@@ -393,16 +483,13 @@ public class ConcreteBucketHandler implements BucketHandler {
         }
 
         void saveRTree() throws IOException {
-            // TODO: 31/08/18 Implement me
-//            throw new RuntimeException("Implement me");
             FileHolder fileHolder = new FileHolder();
             fileHolder.setBucket(bucket);
             getStorageConnection(fileHolder).saveRTree(tree);
         }
 
         private RTree<String, Geometry> getRTree() {
-            FileHolder fileHolder = new FileHolder();
-            fileHolder.setBucket(bucket);
+            FileHolder fileHolder = newEmptyFileHolder();
             Optional<RTree<String, Geometry>> optionalTree = getStorageConnection(fileHolder).getRTree();
             return optionalTree.orElseGet(this::newRTree);
         }
@@ -411,18 +498,24 @@ public class ConcreteBucketHandler implements BucketHandler {
             return RTree.create();
         }
 
-        void add(String id, double latitude, double longitude) {
+        synchronized void add(String id, double latitude, double longitude) {
+            Log.v(TAG, "add: ADDING TO THE TREE");
             this.tree = tree.add(id, Geometries.point(latitude, longitude));
+            Log.d(TAG, tree.asString());
         }
 
-        List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadius) {
-            return getUnsortedImageIds(latitude, longitude, searchRadius, 100);
+        List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadiusMeters) {
+            return getUnsortedImageIds(latitude, longitude, searchRadiusMeters, 100);
         }
 
-        List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadius, int maxResults) {
+        List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadiusMeters, int maxResults) {
             List<String> ids = new ArrayList<>();
-            Objects.requireNonNull(search(Geometries.point(latitude, longitude), searchRadius))
-                    .forEach((entry) -> ids.add(entry.value()));
+            Observable<Entry<String, Geometry>> searchResult = search(Geometries.point(latitude, longitude), searchRadiusMeters);
+            Objects.requireNonNull(searchResult, "Search result was null");
+
+            searchResult.forEach((entry) -> ids.add(entry.value()));
+
+            System.out.println(ids);
             return ids;
         }
 
@@ -432,13 +525,14 @@ public class ConcreteBucketHandler implements BucketHandler {
             // distance then we refine on the exact distance
 
             double distanceKm = distanceMeters / 1000;
-
             Position from = Position.create(latLon.x(), latLon.y());
             Rectangle bounds = createBounds(from, distanceKm);
 
+            System.out.println(tree.asString());
             return tree
                     // do the first search using the bounds
-                    .search(bounds)
+//                    .search(bounds)
+                    .search(latLon, distanceKm)
                     // refine using the exact distance
                     .filter(entry -> {
                         Geometry geometry = entry.geometry();

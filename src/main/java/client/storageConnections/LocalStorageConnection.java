@@ -4,9 +4,11 @@ import client.handler.FileHolder;
 import client.util.Log;
 import com.github.davidmoten.rtree.InternalStructure;
 import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.Serializer;
 import com.github.davidmoten.rtree.Serializers;
 import com.github.davidmoten.rtree.geometry.Geometry;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,18 +30,49 @@ public class LocalStorageConnection extends StorageConnection {
         super(fileHolder, StorageType.LOCAL);
     }
 
+    @Nullable
+    @Override
+    public File getFile(String key) {
+        return new File(getDestination(false, key));
+    }
+
     @Override
     public void copyFile() {
-        Objects.requireNonNull(fileHolder.getFile(), "File was null");
-        String source = fileHolder.getFile().getPath();
-        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
-        String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
-
-        Path destinationPath = Paths.get(System.getProperty("user.home"), bucket, key);
-        String destination = destinationPath.toString();
+        String source = getSource();
+        String destination = getDestination(false);
 
         File file = new File(destination);
+        copy(source, destination, file);
+    }
 
+    @Override
+    public void copyFileToOutput() {
+        String source = getSource();
+        String destination = getDestination(true);
+
+        File file = new File(destination);
+        copy(source, destination, file);
+    }
+
+    private String getDestination(boolean output) {
+        return getDestination(output, fileHolder.getKey());
+    }
+
+    private String getDestination(boolean output, String key) {
+        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
+        Objects.requireNonNull(key, "Key was null");
+        Path destinationPath = null;
+        if (output) destinationPath = Paths.get(System.getProperty("user.home"), bucket, "output", key);
+        else destinationPath = Paths.get(System.getProperty("user.home"), bucket, key);
+        return destinationPath.toString();
+    }
+
+    private String getSource() {
+        Objects.requireNonNull(fileHolder.getFile(), "File was null");
+        return fileHolder.getFile().getPath();
+    }
+
+    private void copy(String source, String destination, File file) {
         boolean createFileSuccessful = false;
         try {
 
@@ -88,11 +121,7 @@ public class LocalStorageConnection extends StorageConnection {
     @Override
     public void removeFile() {
         Objects.requireNonNull(fileHolder.getFile(), "File was null");
-        String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
-        String key = Objects.requireNonNull(fileHolder.getKey(), "Key was null");
-
-        Path filePath = Paths.get(System.getProperty("user.home"), bucket, key);
-        String filePathString = filePath.toString();
+        String filePathString = getDestination(false);
 
         File file = new File(filePathString);
         if (file.exists()) {
@@ -131,7 +160,7 @@ public class LocalStorageConnection extends StorageConnection {
     public Optional<RTree<String, Geometry>> getRTree() {
         File rTree = getRTreeFile();
         try {
-            if (rTree != null && rTree.exists()) {
+            if (rTree != null && rTree.exists() && rTree.length() != 0) {
                 RTree<String, Geometry> tree = Serializers.flatBuffers().utf8().read(new FileInputStream(rTree), rTree.length(), InternalStructure.DEFAULT);
                 return Optional.of(tree);
             } else {
@@ -149,9 +178,11 @@ public class LocalStorageConnection extends StorageConnection {
         String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         String key = Objects.requireNonNull(RTREE_FILE, "Key was null");
 
-
         // TODO: 09/09/18 test me
-        Serializers.flatBuffers().utf8().write(tree, new FileOutputStream(Paths.get(System.getProperty("user.home"), bucket, key).toFile()));
+        try (OutputStream out = new FileOutputStream(Paths.get(System.getProperty("user.home"), bucket, key).toFile())) {
+            Serializer<String, Geometry> serializer = Serializers.flatBuffers().utf8();
+            serializer.write(tree, out);
+        }
 
     }
 

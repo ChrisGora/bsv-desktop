@@ -1,6 +1,9 @@
 package client;
 
 import client.databaseConnections.DatabaseConnectionTest;
+import client.util.Log;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -18,4 +21,11 @@ import org.junit.runners.Suite;
         BucketHandlerTest.class
 })
 
-public class ClientTests {}
+public class ClientTests {
+
+    @BeforeClass
+    public static void setUp() throws Exception {
+        Log.setDebugging();
+        Log.setVerbose();
+    }
+}

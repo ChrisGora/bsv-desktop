@@ -55,7 +55,7 @@ public class BucketHandlerTest {
     }
 
     private static BucketHandler newTestUploader(StorageType type) {
-        return new ConcreteBucketHandler("bristol-streetview-photos", type, 10, 10);
+        return new ConcreteBucketHandler("bristol-streetview-photos", type);
     }
 
 //    @Test
@@ -104,7 +104,7 @@ public class BucketHandlerTest {
     }
 
     @Test
-    public void trip2UploadTest() throws InterruptedException {
+    public void trip2UploadTest() throws Exception {
 
         ClassLoader classLoader = getClass().getClassLoader();
         File folder = new File(Objects.requireNonNull(classLoader.getResource("trip2")).getFile());
@@ -136,6 +136,7 @@ public class BucketHandlerTest {
         }
 
         bucketHandler.saveJustUploadedAsNewRoute(1);
+        bucketHandler.close();
 
         if (error != null) fail(error);
         System.out.println(name.getMethodName() + ": PASSED");
@@ -219,13 +220,21 @@ public class BucketHandlerTest {
     @Test
     public void getPhotoTest() throws InterruptedException {
 
-        BucketHandler bucketHandler = newTestUploader();
-        bucketHandler.deleteAll();
+        try (BucketHandler bucketHandler = newTestUploader()) {
+            bucketHandler.deleteAll();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        trip2UploadTest();
+        try {
+            trip2UploadTest();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (error != null) fail(error);
 
-        PhotoSet set = bucketHandler.getPhotos(51.45868, -2.60385);
+        BucketHandler bucketHandler = newTestUploader();
+        PhotoSet set = bucketHandler.getPhotosAround(51.45868, -2.60385, 100);
         Objects.requireNonNull(set, "PhotoSet was null");
 
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getIds().size());
@@ -257,6 +266,13 @@ public class BucketHandlerTest {
         System.out.println(name.getMethodName() + ": PASSED");
     }
 
+    @Test
+    public void saveImagesTest() throws Exception {
+        trip2UploadTest();
+        try (BucketHandler bucketHandler = newTestUploader()) {
+            bucketHandler.savePhotosAround(51.45868, -2.60385, 100);
+        }
+    }
 
     private void testImage(
             PhotoSet set,
