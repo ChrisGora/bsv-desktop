@@ -29,10 +29,7 @@ import rx.Observable;
 
 import javax.annotation.Nullable;
 import javax.xml.crypto.Data;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -242,6 +239,8 @@ public class ConcreteBucketHandler implements BucketHandler {
     private void uploadGpx(int routeId, GPX gpx) {
         try {
             File tempFile = File.createTempFile("JPX" + routeId, ".gpx");
+            tempFile.deleteOnExit();
+
             GPX.write(gpx, tempFile.getPath());
 
             FileHolder fileHolder = newGpxFileHolder(routeId, tempFile);
@@ -263,9 +262,7 @@ public class ConcreteBucketHandler implements BucketHandler {
     }
 
     private FileHolder newGpxFileHolder(int routeId, File tempFile) {
-        FileHolder fileHolder = new FileHolder();
-        fileHolder.setFile(tempFile);
-        fileHolder.setBucket(bucket);
+        FileHolder fileHolder = newFileHolder(tempFile);
         fileHolder.setKey("GPX_" + routeId + "_" + UUID.randomUUID().toString().replace("-", "") + ".gpx");
         return fileHolder;
     }
@@ -303,12 +300,12 @@ public class ConcreteBucketHandler implements BucketHandler {
             bucketHolder.setBucket(bucket);
             StorageConnection storageConnection = getStorageConnection(bucketHolder);
             storageConnection.removeAll();
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
         }
     }
-// --------------------------------------------------------------------------------------------------------------------
 
+// --------------------------------------------------------------------------------------------------------------------
 
     @Override
     public void savePhotosAround(double latitude, double longitude, int maxResults) throws IOException {
@@ -333,15 +330,34 @@ public class ConcreteBucketHandler implements BucketHandler {
             executor.submit(storageConnection::copyFileToOutput);
 
             File tempFile = File.createTempFile("bsv", ".json");
-            tempFile.deleteOnExit();
+//            tempFile.deleteOnExit();
+
+            PhotoResult photoInfo = new PhotoResult(set.getImages().get(id), set.getDistances().get(id));
 
             Gson gson = new Gson();
-            Writer writer = new FileWriter(tempFile);
-            gson.toJson(set.getImages().get(id), writer);
+
+            try (Writer writer = new FileWriter(tempFile)) {
+                gson.toJson(photoInfo, writer);
+            }
+
+
 
             outputHolder = newFileHolder(tempFile);
+            File file = outputHolder.getFile();
+
+
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                System.out.println(">>>>>>>>>>>>>>");
+                System.out.println(line);
+            }
+
             outputHolder.setBucket(bucket);
             outputHolder.setKey(i + ".json");
+
+            storageConnection = getStorageConnection(outputHolder);
+            executor.submit(storageConnection::copyFileToOutput);
 
             i++;
         }
@@ -394,6 +410,7 @@ public class ConcreteBucketHandler implements BucketHandler {
         try {
             List<String> ids = spatialDatabaseConnection.getUnsortedImageIds(latitude, longitude, searchRadiousMeters, maxResults);
             System.out.println(">>>>>>> UNSORTED IDS:");
+            System.out.println(ids.size());
             System.out.println(ids);
             images = getListOfMetadata(ids);
             System.out.println(images);
@@ -468,6 +485,7 @@ public class ConcreteBucketHandler implements BucketHandler {
             return imageMetadata;
         }
     }
+
 
     private class SpatialDatabaseConnection implements AutoCloseable {
 

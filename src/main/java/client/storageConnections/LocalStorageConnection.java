@@ -7,6 +7,7 @@ import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.Serializer;
 import com.github.davidmoten.rtree.Serializers;
 import com.github.davidmoten.rtree.geometry.Geometry;
+import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -49,6 +50,24 @@ public class LocalStorageConnection extends StorageConnection {
     public void copyFileToOutput() {
         String source = getSource();
         String destination = getDestination(true);
+
+        System.out.println("SOURCE: " + source);
+        System.out.println("DESTINATION: " + destination);
+
+        if (source.contains(".json")){
+
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(fileHolder.getFile()));
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    System.out.println("<<<<");
+                    System.out.println(line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
 
         File file = new File(destination);
         copy(source, destination, file);
@@ -134,7 +153,7 @@ public class LocalStorageConnection extends StorageConnection {
     }
 
     @Override
-    public void removeAll() {
+    public void removeAll() throws IOException {
         String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         Path filePath = Paths.get(System.getProperty("user.home"), bucket);
         String filePathString = filePath.toString();
@@ -146,11 +165,12 @@ public class LocalStorageConnection extends StorageConnection {
         if (!folder.exists()) return;
         if ((!folder.isDirectory())) throw new AssertionError("File was not a directory");
         if (folder.exists()) {
-            File[] files = folder.listFiles();
-            Objects.requireNonNull(files, "List of files was null");
-            for (File file : files) {
-                if (file != null) file.delete();
-            }
+            FileUtils.deleteDirectory(folder);
+//            File[] files = folder.listFiles();
+//            Objects.requireNonNull(files, "List of files was null");
+//            for (File file : files) {
+//                if (file != null) file.delete();
+//            }
         } else throw new AssertionError("File does not exist");
 
     }

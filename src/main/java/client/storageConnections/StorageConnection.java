@@ -81,7 +81,7 @@ public abstract class StorageConnection {
      *
      * Should be submitted as a Runnable and not executed on the main thread.
      */
-    public abstract void removeAll();
+    public abstract void removeAll() throws IOException;
 
     /**
      * Returns a file for the given Image ID. The file may be null.

@@ -39,7 +39,7 @@ public class BucketHandlerTest {
 
     @AfterClass
     public static void tearDownClass() {
-        deleteAll();
+//        deleteAll();
     }
 
     private static void deleteAll() {
@@ -107,7 +107,7 @@ public class BucketHandlerTest {
     public void trip2UploadTest() throws Exception {
 
         ClassLoader classLoader = getClass().getClassLoader();
-        File folder = new File(Objects.requireNonNull(classLoader.getResource("trip2")).getFile());
+        File folder = new File(Objects.requireNonNull(classLoader.getResource("trip3")).getFile());
         Assert.assertTrue("File doesn't exist", folder.exists());
 
         File[] files = folder.listFiles();
