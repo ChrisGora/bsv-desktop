@@ -56,6 +56,7 @@ public class ImageMetadata {
         this.latitude = latitude;
         this.longitude = longitude;
         this.serialNumber = serialNumber;
+        // TODO: 10/09/18 Include loc acc / bearing / bearing acc in the constructor
     }
 
     public ImageMetadata(File image, File jsonInfo) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
