@@ -1,100 +1,133 @@
 package client;
 
-import client.handler.ConcreteBucketHandler;
-import client.storageConnections.StorageType;
 import client.handler.BucketHandler;
+import client.handler.ConcreteBucketHandler;
 import client.handler.FileHolder;
+import client.storageConnections.StorageType;
+import client.util.Log;
+import me.tongfei.progressbar.ProgressBar;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
-public class MainCLI {
+@Command(mixinStandardHelpOptions = true, version = "BSV DB CLIENT 1.0")
+public class MainCLI implements Callable<Void> {
 
+    @Option(names = {"-v", "--verbose"}, description = "Verbose output.")
+    private boolean verbose = false;
 
+    @Option(names = {"-e", "--debug"}, description = "Debugging output.")
+    private boolean debug = false;
 
-    private static final String HELP_NAME = "Help";
-    private static final String HELP_COMMAND = "-h";
+    @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given uploadFolder.")
+    private File folderToUpload;
 
-    private static final String UPLOAD_360_NAME = "Upload 360 photos";
-    private static final String UPLOAD_360_COMMAND = "-u360";
+    @Option(names = {"-s", "--save"}, description = "Save photos with the corresponding ids to the output directory.")
+    private boolean save;
 
-    private static final String UPLOAD_SINGLE_NAME = "Upload a single photo";
-    private static final String UPLOAD_SINGLE_COMMAND = "-us";
+    @Option(names = {"-d", "--delete"}, description = "Delete the photos with the corresponding ids.")
+    private boolean delete;
 
-//    private static final String UPLOAD_MULTIPLE_NAME = "Upload multiple photos";
-//    private static final String UPLOAD_MULTIPLE_COMMAND = "-um";
+    @Parameters(index = "0", paramLabel = "BUCKET", description = "Folder where the processed images are stored to process.")
+    private String bucket;
 
-    private static final String SAVE_ROUTE_NAME = "Save route";
-    private static final String SAVE_ROUTE_COMMAND = "-r";
+    @Parameters(index = "1..*", paramLabel = "IDS", description = "IDs of files to process (what will be done depends on selected options).")
+    private String[] ids;
 
+    private BucketHandler bucketHandler;
+    private ProgressBar pb;
+    private int numberOfImagesToProcess;
+    private int done;
 
 
     public static void main(String[] args) {
-        int n = args.length;
-        if (n <= 2) {
-            printHelp();
-        } else {
-            String bucketName = args[1];
-            String bucketType = args[2];
+        CommandLine.call(new MainCLI(), args);
+    }
 
-            if (bucketName != null && bucketType != null) {
-                int i = 3;
-                while (i < n) {
-                    switch (args[n]) {
-                        case UPLOAD_360_COMMAND:            upload360(n, args, bucketName, bucketType);
-                                                        break;
-                        case UPLOAD_SINGLE_COMMAND:         uploadSingle(n, args, bucketName, bucketType);
-                                                        break;
-                        case SAVE_ROUTE_COMMAND:        saveRoute(n, args, bucketName, bucketType);
-                                                        break;
-                    }
-                }
-            }
+    @Override
+    public Void call() throws Exception {
+
+        if (debug) Log.setDebugging();
+        if (verbose) Log.setVerbose();
+
+
+        if (folderToUpload != null && folderToUpload.isDirectory()) {
+            System.out.println("UPLOADING...");
+            bucketHandler = new ConcreteBucketHandler(bucket, StorageType.LOCAL);
+            File[] files = folderToUpload.listFiles();
+            Objects.requireNonNull(files, "File array was null");
+            List<File> filesList = Arrays.asList(files);
+
+            List<File> actualImages = filesList
+                                            .stream()
+                                            .filter((file) -> file.getPath().contains("_E.jpg"))
+                                            .collect(Collectors.toList());
+
+            setProgressMonitoring(actualImages.size());
+
+            actualImages.forEach(this::handleFile);
+        } else if (save) {
+            System.out.println("RETRIEVING PHOTOS...");
+            bucketHandler = new ConcreteBucketHandler(bucket, StorageType.LOCAL);
+            setProgressMonitoring(ids.length);
+            bucketHandler.savePhotos(this::onDone, ids);
         }
+
+        System.out.println("FINISHED!");
+        return null;
     }
 
-
-    private static void printHelp() {
-        System.out.println("First argument must be the bucket name");
-        System.out.println("Second argument must be the storage type: 'S3' OR 'LOCAL'");
-        printHelpSingleLine(HELP_NAME, HELP_COMMAND);
-        printHelpSingleLine(UPLOAD_360_NAME, UPLOAD_360_COMMAND);
-        printHelpSingleLine(UPLOAD_SINGLE_NAME, UPLOAD_SINGLE_COMMAND);
-        printHelpSingleLine(SAVE_ROUTE_NAME, SAVE_ROUTE_COMMAND);
-    }
-
-    private static void printHelpSingleLine(String name, String command) {
-      System.out.printf("%-30s %s\n", name, command);
-    }
-
-
-//    n is the index of the command
-    private static void upload360(int n, String[] args, String bucketName, String bucketType) {
-        String path = args[n + 1];
-        File directory = new File(path);
-        File[] files = directory.listFiles();
-
-        BucketHandler bucketHandler;
-        if ("S3".equals(bucketType)) bucketHandler = new ConcreteBucketHandler(bucketName, StorageType.AMAZON);
-        else if ("LOCAL".equals(bucketType)) bucketHandler = new ConcreteBucketHandler(bucketName, StorageType.LOCAL);
-        else throw new IllegalArgumentException("Incorrect bucket type");
-
-        for (File file : Objects.requireNonNull(files)) {
-            if ((file != null) && file.getPath().contains("_E.jpg")) {
-                FileHolder upload = bucketHandler.newFileHolder(file);
+    private void handleFile(File file) {
+        if (file != null && file.getPath().contains("_E.jpg")) {
+            FileHolder upload = bucketHandler.newFileHolder(file);
+            if (upload != null) {
+                setDefaultListeners(upload);
                 bucketHandler.upload(upload);
-                // TODO: 20/08/18 Set listeners and maybe do synchronized? Check if the app exits before work is done!!
             }
         }
     }
 
-    private static void uploadSingle(int n, String[] args, String bucketName, String bucketType) {
-
+    private void setDefaultListeners(FileHolder upload) {
+//        upload.setUploadCompletionListener(this::onDone);
+        upload.setUploadFailureListener(System.err::println);
+//
+        upload.setDbUpdateCompletionListener(this::onDone);
+        upload.setDbFailureListener(System.err::println);
+//
+        upload.setRemoveCompletionListener(System.out::println);
+        upload.setRemoveFailureListener(System.err::println);
     }
 
-
-    private static void saveRoute(int n, String[] args, String bucketName, String bucketType) {
-
+    private void setProgressMonitoring(int n) {
+        pb = new ProgressBar("Processing...", n);
+        numberOfImagesToProcess = n;
     }
 
+    private synchronized void onDone(FileHolder fh) {
+        pb.step();
+        done++;
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("DONE: " + fh.getKey());
+        if (done == numberOfImagesToProcess) {
+            try {
+                bucketHandler.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                pb.close();
+            }
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package client.handler;
 
 import client.PhotoSet;
+import client.observers.CompletionObserver;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -25,16 +26,20 @@ public interface BucketHandler extends Closeable {
     PhotoSet getPhotosAround(double latitude, double longitude, int maxResults);
     void savePhotosAround(double latitude, double longitude, int maxResults) throws IOException;
 
-    PhotoSet getPhotosTakenOn(LocalDateTime dateTime);
-    void savePhotosTakenOn(LocalDateTime dateTime);
+    void savePhotos(CompletionObserver callback, String... ids);
 
-    PhotoSet getPhotosUploadedOn(LocalDateTime dateTime);
-    void savePhotosUploadedOn(LocalDateTime dateTime);
+    void deletePhotos(CompletionObserver callback, String... ids);
 
-    PhotoSet getPhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
-    void savePhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
-
-    PhotoSet getPhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
-    void savePhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
+//    PhotoSet getPhotosTakenOn(LocalDateTime dateTime);
+//    void savePhotosTakenOn(LocalDateTime dateTime);
+//
+//    PhotoSet getPhotosUploadedOn(LocalDateTime dateTime);
+//    void savePhotosUploadedOn(LocalDateTime dateTime);
+//
+//    PhotoSet getPhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
+//    void savePhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
+//
+//    PhotoSet getPhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
+//    void savePhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2);
 
 }

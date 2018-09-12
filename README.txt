@@ -19,3 +19,24 @@ NOTES:
 
 - NEVER have two clients / two instances of the Bucket Handler running concurrently on the same bucket.
     The images and the metadata database will survive - however the internal spatial database (RTree) will get destroyed.
+
+
+
+RUNNING:
+
+1. Create an executable JAR:
+
+        mvn clean compile package
+
+2a. Run the java code directly:
+
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar  [+OPTIONS]
+
+2b. Run a mysql query and feed it into the java code:
+
+        mysql -N -u java-db-client -p  < test.sql > out.txt
+        v1M4^qVAU!3084NF
+
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar [+OPTIONS] @out.txt
+
+        EG: java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ves @out.txt

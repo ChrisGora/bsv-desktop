@@ -3,6 +3,7 @@ package client.handler;
 import client.databaseConnections.ImageMetadata;
 import client.PhotoSet;
 import client.databaseConnections.DatabaseConnection;
+import client.observers.CompletionObserver;
 import client.storageConnections.LocalStorageConnection;
 import client.storageConnections.S3Connection;
 import client.storageConnections.StorageConnection;
@@ -290,6 +291,30 @@ public class ConcreteBucketHandler implements BucketHandler {
     }
 
     @Override
+    public void savePhotos(CompletionObserver callback, String... ids) {
+
+        // TODO: 12/09/18 USE THE CALLBACKS!!!!!
+
+        int i = 1;
+        for (String id : ids) {
+            ImageMetadata metadata = null;
+            try (DatabaseConnection db = new DatabaseConnection()) {
+                metadata = db.getMetadata(id);
+                copyToOutput(i, id, metadata, null);
+            } catch (SQLException | IOException e) {
+                e.printStackTrace();
+            }
+
+            i++;
+        }
+    }
+
+    @Override
+    public void deletePhotos(CompletionObserver callback, String... ids) {
+
+    }
+
+    @Override
     public void deleteAll() {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll(bucket);
@@ -309,95 +334,58 @@ public class ConcreteBucketHandler implements BucketHandler {
         int i = 1;
         PhotoSet set = getPhotosAround(latitude, longitude, maxResults);
         for (String id : set.getIds()) {
-            FileHolder outputHolder = newEmptyFileHolder();
-            String fileKey = null;
-            try (DatabaseConnection db = new DatabaseConnection()) {
-                fileKey = db.getPath(id).getKey();
-                Objects.requireNonNull(fileKey, "Retrieved file key was null");
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            StorageConnection storageConnection = getStorageConnection(outputHolder);
-            outputHolder.setFile(storageConnection.getFile(fileKey));
-            outputHolder.setKey(i + fileKey.substring(fileKey.lastIndexOf('.')));
-            System.out.println(outputHolder.getFile());
-            System.out.println(outputHolder.getKey());
-
-            executor.submit(storageConnection::copyFileToOutput);
-
-            File tempFile = File.createTempFile("bsv", ".json");
-//            tempFile.deleteOnExit();
-
-            PhotoResult photoInfo = new PhotoResult(set.getImages().get(id), set.getDistances().get(id));
-
-            Gson gson = new Gson();
-
-            try (Writer writer = new FileWriter(tempFile)) {
-                gson.toJson(photoInfo, writer);
-            }
-
-
-
-            outputHolder = newFileHolder(tempFile);
-            File file = outputHolder.getFile();
-
-
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                System.out.println(">>>>>>>>>>>>>>");
-                System.out.println(line);
-            }
-
-            outputHolder.setBucket(bucket);
-            outputHolder.setKey(i + ".json");
-
-            storageConnection = getStorageConnection(outputHolder);
-            executor.submit(storageConnection::copyFileToOutput);
-
+            ImageMetadata metadata = set.getImages().get(id);
+            Double distance = set.getDistances().get(id);
+            copyToOutput(i, id, metadata, distance);
             i++;
         }
     }
 
-    @Override
-    public void savePhotosTakenOn(LocalDateTime dateTime) {
+    private void copyToOutput(int i, String id, ImageMetadata metadata, Double distance) throws IOException {
+        FileHolder outputHolder = newEmptyFileHolder();
+        String fileKey = null;
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            fileKey = db.getPath(id).getKey();
+            Objects.requireNonNull(fileKey, "Retrieved file key was null");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-    }
+        StorageConnection storageConnection = getStorageConnection(outputHolder);
+        outputHolder.setFile(storageConnection.getFile(fileKey));
+        outputHolder.setKey(i + fileKey.substring(fileKey.lastIndexOf('.')));
+        System.out.println(outputHolder.getFile());
+        System.out.println(outputHolder.getKey());
 
-    @Override
-    public void savePhotosUploadedOn(LocalDateTime dateTime) {
+        executor.submit(storageConnection::copyFileToOutput);
 
-    }
+        File tempFile = File.createTempFile("bsv", ".json");
+//            tempFile.deleteOnExit();
 
-    @Override
-    public void savePhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+        PhotoResult photoInfo = new PhotoResult(metadata, distance);
 
-    }
+        Gson gson = new Gson();
 
-    @Override
-    public void savePhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+        try (Writer writer = new FileWriter(tempFile)) {
+            gson.toJson(photoInfo, writer);
+        }
 
-    }
+        outputHolder = newFileHolder(tempFile);
+        File file = outputHolder.getFile();
 
-    @Override
-    public PhotoSet getPhotosTakenOn(LocalDateTime dateTime) {
-        return null;
-    }
 
-    @Override
-    public PhotoSet getPhotosUploadedOn(LocalDateTime dateTime) {
-        return null;
-    }
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            System.out.println(">>>>>>>>>>>>>>");
+            System.out.println(line);
+        }
 
-    @Override
-    public PhotoSet getPhotosTakenBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
-        return null;
-    }
+        outputHolder.setBucket(bucket);
+        outputHolder.setKey(i + ".json");
 
-    @Override
-    public PhotoSet getPhotosUploadedBetween(LocalDateTime dateTime1, LocalDateTime dateTime2) {
-        return null;
+        storageConnection = getStorageConnection(outputHolder);
+        executor.submit(storageConnection::copyFileToOutput);
     }
 
     @Nullable
@@ -460,10 +448,10 @@ public class ConcreteBucketHandler implements BucketHandler {
     private class PhotoResult {
 
         private final String id;
-        private final double distance;
+        private final Double distance;
         private final ImageMetadata imageMetadata;
 
-        PhotoResult(ImageMetadata imageMetadata, double distance) {
+        PhotoResult(ImageMetadata imageMetadata, Double distance) {
             this.id = imageMetadata.getId();
             this.distance = distance;
             this.imageMetadata = imageMetadata;
@@ -517,6 +505,7 @@ public class ConcreteBucketHandler implements BucketHandler {
             Log.v(TAG, "add: ADDING TO THE TREE");
             this.tree = tree.add(id, Geometries.point(latitude, longitude));
             Log.d(TAG, tree.asString());
+
         }
 
         List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadiusMeters) {
@@ -531,6 +520,12 @@ public class ConcreteBucketHandler implements BucketHandler {
             searchResult.forEach((entry) -> ids.add(entry.value()));
 
             System.out.println(ids);
+
+            if (Log.debugging) {
+                tree.visualize(600,600)
+                        .save("target/" + ids.size() + ".png");
+            }
+
             return ids;
         }
 

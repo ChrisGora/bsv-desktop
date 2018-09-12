@@ -223,7 +223,7 @@ public class BucketHandlerTest {
 
 
     @Test
-    public void getPhotoTest() throws InterruptedException {
+    public void getPhotoTest() throws InterruptedException, IOException {
 
         try (BucketHandler bucketHandler = newTestUploader()) {
             bucketHandler.deleteAll();
@@ -240,6 +240,7 @@ public class BucketHandlerTest {
 
         BucketHandler bucketHandler = newTestUploader();
         PhotoSet set = bucketHandler.getPhotosAround(51.45868, -2.60385, 100);
+        bucketHandler.close();
         Objects.requireNonNull(set, "PhotoSet was null");
 
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getIds().size());

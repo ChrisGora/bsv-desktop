@@ -274,6 +274,8 @@ public class DatabaseConnection implements AutoCloseable {
         }
     }
 
+    // FIXME: 12/09/18 They don't take buckets into account!!!!! Returned ids will have come from the entire DB!!!
+
     public List<ImageMetadata> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
         String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE uploadTimestamp = ?;";

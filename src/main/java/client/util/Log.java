@@ -2,8 +2,8 @@ package client.util;
 
 public class Log {
 
-    private static boolean verbose = false;
-    private static boolean debugging = false;
+    public static boolean verbose = false;
+    public static boolean debugging = false;
 
     public static void setVerbose() {
         verbose = true;
