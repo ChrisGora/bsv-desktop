@@ -1,10 +1,12 @@
 package client;
 
 import client.databaseConnections.ImageMetadata;
+import client.util.Log;
 import com.adobe.xmp.XMPException;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import org.apache.commons.imaging.ImageReadException;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
@@ -15,6 +17,12 @@ import static org.junit.Assert.*;
 
 public class ImageMetadataTest {
 
+    @BeforeClass
+    public static void setUp() throws Exception {
+        Log.setDebugging();
+        Log.setVerbose();
+    }
+
     @Test
     public void fileReadTest() {
         ClassLoader classLoader = getClass().getClassLoader();
@@ -22,7 +30,7 @@ public class ImageMetadataTest {
         ImageMetadata metadata = null;
 
         try {
-            metadata = new ImageMetadata(file);
+            metadata = new ImageMetadata(file, 0);
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
             e.printStackTrace();
         }

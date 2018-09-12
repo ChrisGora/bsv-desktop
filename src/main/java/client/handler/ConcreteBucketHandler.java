@@ -8,7 +8,6 @@ import client.storageConnections.S3Connection;
 import client.storageConnections.StorageConnection;
 import client.storageConnections.StorageType;
 import client.util.Log;
-import com.amazonaws.transform.MapEntry;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.MetadataException;
 import com.github.davidmoten.grumpy.core.Position;
@@ -18,7 +17,6 @@ import com.github.davidmoten.rtree.geometry.Geometries;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Point;
 import com.github.davidmoten.rtree.geometry.Rectangle;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Length;
@@ -28,7 +26,6 @@ import org.apache.commons.imaging.ImageReadException;
 import rx.Observable;
 
 import javax.annotation.Nullable;
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -59,7 +56,7 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     private static final String TAG = "ConcreteBucketHandler";
 
-    private final double searchRadiousMeters;
+    private final double searchRadiusMeters;
     private final String bucket;
     private final StorageType type;
     private ExecutorService executor;
@@ -70,16 +67,15 @@ public class ConcreteBucketHandler implements BucketHandler {
         this(bucket, type, 5000);
     }
 
-    public ConcreteBucketHandler(String bucket, StorageType type, double searchRadiousMeters) {
+    public ConcreteBucketHandler(String bucket, StorageType type, double searchRadiusMeters) {
         this.type = type;
         this.bucket = bucket;
-        this.searchRadiousMeters = searchRadiousMeters;
+        this.searchRadiusMeters = searchRadiusMeters;
         this.spatialDatabaseConnection = new SpatialDatabaseConnection();
         // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
 //        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
         this.executor = Executors.newWorkStealingPool(4);
         this.doneUploads = new ArrayList<>();
-
     }
 
     private StorageConnection getStorageConnection(FileHolder fileHolder) {
@@ -118,7 +114,12 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     @Override
     public void upload(FileHolder upload) {
-        ImageMetadata metadata = getImageMetadata(upload);
+        upload(upload, 0);
+    }
+
+    @Override
+    public void upload(FileHolder upload, int routeNumber) {
+        ImageMetadata metadata = getImageMetadata(upload, routeNumber);
         if (metadata == null) return;
         else upload.setMetadata(metadata);
 
@@ -155,7 +156,7 @@ public class ConcreteBucketHandler implements BucketHandler {
         return id;
     }
 
-    private ImageMetadata getImageMetadata(FileHolder upload) {
+    private ImageMetadata getImageMetadata(FileHolder upload, int routeNumber) {
         ImageMetadata metadata = null;
         try {
             String jsonPath = null;
@@ -172,9 +173,9 @@ public class ConcreteBucketHandler implements BucketHandler {
             }
 
             if (json != null && json.exists()) {
-                metadata = new ImageMetadata(upload.getFile(), json);
+                metadata = new ImageMetadata(upload.getFile(), json, routeNumber);
             } else {
-                metadata = new ImageMetadata(upload.getFile());
+                metadata = new ImageMetadata(upload.getFile(), routeNumber);
             }
             return metadata;
         } catch (IOException | MetadataException | ImageProcessingException | ImageReadException e) {
@@ -195,7 +196,7 @@ public class ConcreteBucketHandler implements BucketHandler {
                 int result = db.insertPhotoRow(
                         metadata,
                         localDateTime,
-                        1,
+                        metadata.getRouteNumber(),
                         upload.getBucket(),
                         upload.getKey()
                 );
@@ -205,27 +206,23 @@ public class ConcreteBucketHandler implements BucketHandler {
                     upload.onDbSuccess();
                 } else {
                     upload.onDbFailure("Database error - database returned: " + result);
-
-                    upload.setRemoveCompletionListener((f) -> Log.w(TAG, "REMOVE Done: " + f.getKey()));
-                    upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
-
-                    StorageConnection storageConnection = getStorageConnection(upload);
-                    executor.submit(storageConnection::removeFile);
+                    removeFromDatabase(upload);
                 }
 
             } catch (SQLException e) {
                 e.printStackTrace();
                 upload.onDbFailure(e.toString());
-
-                upload.setRemoveCompletionListener((f) -> Log.w(TAG, "REMOVE Done: " + f.getKey()));
-                upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
-
-                StorageConnection storageConnection = getStorageConnection(upload);
-                executor.submit(storageConnection::removeFile);
-
-                // FIXME: 31/07/18 Duplicate code for removing dead files
+                removeFromDatabase(upload);
             }
         });
+    }
+
+    private void removeFromDatabase(FileHolder upload) {
+        upload.setRemoveCompletionListener((f) -> Log.w(TAG, "REMOVE Done: " + f.getKey()));
+        upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
+
+        StorageConnection storageConnection = getStorageConnection(upload);
+        executor.submit(storageConnection::removeFile);
     }
 
     @Override
@@ -408,7 +405,7 @@ public class ConcreteBucketHandler implements BucketHandler {
     public PhotoSet getPhotosAround(double latitude, double longitude, int maxResults) {
         List<ImageMetadata> images = null;
         try {
-            List<String> ids = spatialDatabaseConnection.getUnsortedImageIds(latitude, longitude, searchRadiousMeters, maxResults);
+            List<String> ids = spatialDatabaseConnection.getUnsortedImageIds(latitude, longitude, searchRadiusMeters, maxResults);
             System.out.println(">>>>>>> UNSORTED IDS:");
             System.out.println(ids.size());
             System.out.println(ids);

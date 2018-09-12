@@ -199,9 +199,18 @@ public class LocalStorageConnection extends StorageConnection {
         String key = Objects.requireNonNull(RTREE_FILE, "Key was null");
 
         // TODO: 09/09/18 test me
-        try (OutputStream out = new FileOutputStream(Paths.get(System.getProperty("user.home"), bucket, key).toFile())) {
+
+        Log.d(TAG, "saveRTree: Trying to save RTREE");
+        try (OutputStream out = new FileOutputStream(rTree)) {
+
             Serializer<String, Geometry> serializer = Serializers.flatBuffers().utf8();
             serializer.write(tree, out);
+
+            Log.i(TAG, "RTREE Saved");
+
+        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+            Log.w(TAG, "saveRTree: BUCKET NOT FOUND");
         }
 
     }
@@ -213,6 +222,8 @@ public class LocalStorageConnection extends StorageConnection {
         Path filePath = Paths.get(System.getProperty("user.home"), bucket, key);
         String filePathString = filePath.toString();
 
-        return new File(filePathString);
+        File file = new File(filePathString);
+//        new File(file.getParentFile().toURI()).mkdirs();
+        return file;
     }
 }

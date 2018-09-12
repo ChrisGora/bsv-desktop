@@ -35,3 +35,4 @@ CREATE TABLE Photo
   CHARSET = latin1;
 
 
+

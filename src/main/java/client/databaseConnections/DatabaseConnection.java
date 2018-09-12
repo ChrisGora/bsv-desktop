@@ -168,7 +168,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     public ImageMetadata getMetadata(String id) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE id = ? ";
 
         ImageMetadata metadata;
@@ -212,7 +212,7 @@ public class DatabaseConnection implements AutoCloseable {
 
     // TODO: 09/08/18 Refactor into List<ImageMetadata>
     public List<ImageMetadata> getPhotosTakenAt(double latitude, double longitude) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE latitude = ? " +
                 "AND longitude = ?;";
 
@@ -243,13 +243,14 @@ public class DatabaseConnection implements AutoCloseable {
                 LocalDateTime.ofInstant(results.getTimestamp("photoTimestamp").toInstant(), ZoneId.systemDefault()),
                 results.getDouble("latitude"),
                 results.getDouble("longitude"),
-                results.getString("cameraSerialNumber")
+                results.getString("cameraSerialNumber"),
+                results.getInt("routeId")
         );
     }
 
     //    Time of photo being taken:
     public List<ImageMetadata> getPhotosTakenOn(LocalDateTime dateTime) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE photoTimestamp = ?;";
 
         List<ImageMetadata> images = new ArrayList<>();
@@ -274,7 +275,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     public List<ImageMetadata> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE uploadTimestamp = ?;";
 
         List<ImageMetadata> images = new ArrayList<>();
@@ -287,7 +288,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     private List<ImageMetadata> getPhotosBetween(LocalDateTime date1, LocalDateTime date2, String where) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE " + where + " BETWEEN ? AND ?;";
         List<ImageMetadata> images = new ArrayList<>();
         executeSqlWithTwoDates(sql, date1, date2, images);
@@ -334,7 +335,7 @@ public class DatabaseConnection implements AutoCloseable {
                                                double longitudeDelta
     ) throws SQLException {
 
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
                 "WHERE latitude BETWEEN ? AND ? " +
                 "AND longitude BETWEEN ? AND ?;";
 

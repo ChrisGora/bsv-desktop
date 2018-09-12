@@ -46,9 +46,10 @@ public class ImageMetadata {
     private double bearing;
     private double bearingAccuracy;
     private String serialNumber;
+    private int routeNumber;
 
 
-    public ImageMetadata(String id, int height, int width, LocalDateTime photoDateTime, double latitude, double longitude, String serialNumber) {
+    public ImageMetadata(String id, int height, int width, LocalDateTime photoDateTime, double latitude, double longitude, String serialNumber, int routeNumber) {
         this.id = id;
         this.height = height;
         this.width = width;
@@ -56,17 +57,19 @@ public class ImageMetadata {
         this.latitude = latitude;
         this.longitude = longitude;
         this.serialNumber = serialNumber;
+        this.routeNumber = routeNumber;
         // TODO: 10/09/18 Include loc acc / bearing / bearing acc in the constructor
     }
 
-    public ImageMetadata(File image, File jsonInfo) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
-        this(image);
+    public ImageMetadata(File image, File jsonInfo, int routeNumber) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
+        this(image, routeNumber);
         assert (jsonInfo.getName().contains(".json"));
         readJsonMetadata(jsonInfo);
     }
 
-    public ImageMetadata(File file) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
+    public ImageMetadata(File file, int routeNumber) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
         assert (file.getName().contains(".jpg"));
+        this.routeNumber = routeNumber;
         readJpegMetadata(file);
         readExifMetadata(file);
     }
@@ -210,5 +213,9 @@ public class ImageMetadata {
 
     public double getBearingAccuracy() {
         return bearingAccuracy;
+    }
+
+    public int getRouteNumber() {
+        return routeNumber;
     }
 }

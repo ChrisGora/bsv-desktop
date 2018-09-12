@@ -3,17 +3,20 @@ package client.handler;
 import client.PhotoSet;
 
 import javax.annotation.Nullable;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-public interface BucketHandler extends AutoCloseable {
+public interface BucketHandler extends Closeable {
 
     FileHolder newFileHolder(File file);
 
     FileHolder newEmptyFileHolder();
 
     void upload(FileHolder upload);
+
+    void upload(FileHolder upload, int routeNumber);
 
     int saveJustUploadedAsNewRoute(int routeId);
 

@@ -7,10 +7,12 @@ import client.storageConnections.StorageType;
 import client.handler.BucketHandler;
 import client.handler.FileHolder;
 import client.observers.CompletionObserver;
+import client.util.Log;
 import org.junit.*;
 import org.junit.rules.TestName;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -30,10 +32,13 @@ public class BucketHandlerTest {
     @Before
     public void setUp() {
         error = null;
+//        deleteAll();
     }
 
     @BeforeClass
-    public static void setUpClass() {
+    public static void setUpClass() throws IOException {
+        Log.setDebugging();
+        Log.setVerbose();
         deleteAll();
     }
 
@@ -42,12 +47,10 @@ public class BucketHandlerTest {
 //        deleteAll();
     }
 
-    private static void deleteAll() {
+    private static void deleteAll() throws IOException {
         final BucketHandler localBucketHandler = newTestUploader(StorageType.LOCAL);
-//        final BucketHandler amazonBucketHandler = newTestUploader(StorageType.AMAZON);
-
         localBucketHandler.deleteAll();
-//        amazonBucketHandler.deleteAll();
+        localBucketHandler.close();
     }
 
     private static BucketHandler newTestUploader() {
@@ -66,35 +69,37 @@ public class BucketHandlerTest {
 //    }
 
     @Test
-    public void localSimpleUploadTest() throws InterruptedException {
+    public void localSimpleUploadTest() throws InterruptedException, IOException {
         simpleUploadTest(StorageType.LOCAL);
         if (error != null) fail(error);
         System.out.println(name.getMethodName() + ": PASSED");
     }
 
-    private void simpleUploadTest(StorageType type) throws InterruptedException {
+    private void simpleUploadTest(StorageType type) throws InterruptedException, IOException {
 
         ClassLoader classLoader = getClass().getClassLoader();
 
         File file = new File(Objects.requireNonNull(classLoader.getResource("client/test.jpg")).getFile());
 
-        BucketHandler bucketHandler = newTestUploader(type);
-        bucketHandler.deleteAll();
+        try (BucketHandler bucketHandler = newTestUploader(type)) {
 
-        FileHolder upload = bucketHandler.newFileHolder(file);
+            bucketHandler.deleteAll();
 
-        CompletionObserver completionObserver = newSynchronizedCompletionObserver();
-        upload.setDbUpdateCompletionListener(completionObserver);
-        upload.setProgressListener(this::onProgressUpdated);
-        upload.setUploadFailureListener(this::onFailure);
+            FileHolder upload = bucketHandler.newFileHolder(file);
 
-        bucketHandler.upload(upload);
+            CompletionObserver completionObserver = newSynchronizedCompletionObserver();
+            upload.setDbUpdateCompletionListener(completionObserver);
+            upload.setProgressListener(this::onProgressUpdated);
+            upload.setUploadFailureListener(this::onFailure);
 
-        synchronized (completionObserver) {
-                completionObserver.wait(5000);
-        }
+            bucketHandler.upload(upload);
 
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>> EXITED SYNCHRONISED");
+            synchronized (completionObserver) {
+               completionObserver.wait(5000);
+            }
+
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>> EXITED SYNCHRONISED");
+        };
 
 //        try {
 //            Thread.sleep(100000);
@@ -107,7 +112,7 @@ public class BucketHandlerTest {
     public void trip2UploadTest() throws Exception {
 
         ClassLoader classLoader = getClass().getClassLoader();
-        File folder = new File(Objects.requireNonNull(classLoader.getResource("trip3")).getFile());
+        File folder = new File(Objects.requireNonNull(classLoader.getResource("trip2")).getFile());
         Assert.assertTrue("File doesn't exist", folder.exists());
 
         File[] files = folder.listFiles();
@@ -171,7 +176,7 @@ public class BucketHandlerTest {
     }
 
     @Test
-    public void uploadAssertionsTest() throws SQLException, InterruptedException {
+    public void uploadAssertionsTest() throws SQLException, InterruptedException, IOException {
 
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll("bristol-streetview-photos");
@@ -194,7 +199,7 @@ public class BucketHandlerTest {
     }
 
     @Test
-    public void removeTest() throws SQLException, InterruptedException {
+    public void removeTest() throws SQLException, InterruptedException, IOException {
         uploadAssertionsTest();
 
         BucketHandler bucketHandler = newTestUploader();
