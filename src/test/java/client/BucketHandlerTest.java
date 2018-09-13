@@ -49,7 +49,7 @@ public class BucketHandlerTest {
 
     private static void deleteAll() throws IOException {
         final BucketHandler localBucketHandler = newTestUploader(StorageType.LOCAL);
-        localBucketHandler.deleteAll();
+        localBucketHandler.deleteAll(null);
         localBucketHandler.close();
     }
 
@@ -83,7 +83,7 @@ public class BucketHandlerTest {
 
         try (BucketHandler bucketHandler = newTestUploader(type)) {
 
-            bucketHandler.deleteAll();
+            bucketHandler.deleteAll(null);
 
             FileHolder upload = bucketHandler.newFileHolder(file);
 
@@ -118,7 +118,7 @@ public class BucketHandlerTest {
         File[] files = folder.listFiles();
 
         BucketHandler bucketHandler = newTestUploader();
-        bucketHandler.deleteAll();
+        bucketHandler.deleteAll(null);
 
         for (File file : Objects.requireNonNull(files, "Files were null")) {
             if (file != null && file.getPath().contains("_E.jpg")) {
@@ -203,7 +203,7 @@ public class BucketHandlerTest {
         uploadAssertionsTest();
 
         BucketHandler bucketHandler = newTestUploader();
-        bucketHandler.deleteAll();
+        bucketHandler.deleteAll(null);
 
         String exception = null;
         try (DatabaseConnection db = new DatabaseConnection()) {
@@ -226,7 +226,7 @@ public class BucketHandlerTest {
     public void getPhotoTest() throws InterruptedException, IOException {
 
         try (BucketHandler bucketHandler = newTestUploader()) {
-            bucketHandler.deleteAll();
+            bucketHandler.deleteAll(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -247,7 +247,9 @@ public class BucketHandlerTest {
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getDistances().size());
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getImages().size());
 
-        String id = set.getIds().get(0);
+        List<String> ids = set.getIds();
+
+        String id = ids.get(0);
         testImage(
                 set,
                 id,
@@ -258,7 +260,7 @@ public class BucketHandlerTest {
                 0.1
                 );
 
-        id = set.getIds().get(78);
+        id = ids.get(ids.size() - 1);
         testImage(
                 set,
                 id,
@@ -276,7 +278,8 @@ public class BucketHandlerTest {
     public void saveImagesTest() throws Exception {
         trip2UploadTest();
         try (BucketHandler bucketHandler = newTestUploader()) {
-            bucketHandler.savePhotosAround(51.45868, -2.60385, 100);
+            PhotoSet set = bucketHandler.getPhotosAround(51.45868, -2.60385, 100);
+            bucketHandler.downloadPhotoSet(null, set);
         }
     }
 

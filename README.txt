@@ -4,7 +4,7 @@ PROJECT SETUP:
 
 2. Execute:
 
-        sudo mysql -u root < script.sql
+        sudo mysql -u root < init.sql
 
 3. Verify the installation by running all client tests:
 
@@ -34,9 +34,20 @@ RUNNING:
 
 2b. Run a mysql query and feed it into the java code:
 
-        mysql -N -u java-db-client -p  < test.sql > out.txt
+
+        EXAMPLE:
+
+        1) UPLOAD
+
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -evr=23 -u=/home/chris/Desktop/repos/db-client/trips/trip3 bristol-streetview-photos
+
+
+        2) RUN A MYSQL QUERY
+
+        mysql -N -u java-db-client -p  < script.sql > out.txt
         v1M4^qVAU!3084NF
 
-        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar [+OPTIONS] @out.txt
 
-        EG: java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ves @out.txt
+        3) DOWNLOAD RESULTS SELECTED BY THE QUERY
+
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -evs bristol-streetview-photos @out.txt

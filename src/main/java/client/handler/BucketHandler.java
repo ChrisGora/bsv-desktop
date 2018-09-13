@@ -21,14 +21,13 @@ public interface BucketHandler extends Closeable {
 
     int saveJustUploadedAsNewRoute(int routeId);
 
-    void deleteAll();
-
     PhotoSet getPhotosAround(double latitude, double longitude, int maxResults);
-    void savePhotosAround(double latitude, double longitude, int maxResults) throws IOException;
+    void downloadPhotoSet(CompletionObserver callback, PhotoSet set) throws IOException;
 
-    void savePhotos(CompletionObserver callback, String... ids);
+    void downloadPhotos(CompletionObserver callback, String... ids);
 
     void deletePhotos(CompletionObserver callback, String... ids);
+    void deleteAll(CompletionObserver callback);
 
 //    PhotoSet getPhotosTakenOn(LocalDateTime dateTime);
 //    void savePhotosTakenOn(LocalDateTime dateTime);

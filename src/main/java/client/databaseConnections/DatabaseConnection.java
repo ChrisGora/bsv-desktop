@@ -362,6 +362,15 @@ public class DatabaseConnection implements AutoCloseable {
         return images;
     }
 
+    public void delete(String id) throws SQLException {
+        String sql = "DELETE FROM Photo WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, id);
+            statement.executeUpdate();
+            Log.i(TAG, "Row " + id + " was deleted from the database");
+        }
+    }
+
     //    ------------------------------------------------------------------------------------------------------------------
 
 /*

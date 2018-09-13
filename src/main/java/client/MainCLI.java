@@ -27,14 +27,40 @@ public class MainCLI implements Callable<Void> {
     @Option(names = {"-e", "--debug"}, description = "Debugging output.")
     private boolean debug = false;
 
-    @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given uploadFolder.")
+    @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given folder.")
     private File folderToUpload;
+
+    // TODO: 13/09/18 Implement me
+    @Option(names = {"--saveAsGpxAfterUpload"}, description = "Collect all just uploaded files into a GPX file")
+    private boolean saveAsGpxAfterUpload;
+
+    // TODO: 13/09/18 Implement me
+    @Option(names = {"--saveRouteAsGpx"}, description = "Collect all entries with the specified route ID into a GPX file. A route ID must be specified with '-r'.")
+    private boolean saveRouteAsGpx;
 
     @Option(names = {"-s", "--save"}, description = "Save photos with the corresponding ids to the output directory.")
     private boolean save;
 
     @Option(names = {"-d", "--delete"}, description = "Delete the photos with the corresponding ids.")
     private boolean delete;
+
+    @Option(names = {"--deleteAll"}, description = "Delete all elements from the bucket.")
+    private boolean deleteAll;
+
+    @Option(names = {"-r", "--route"}, description = "Route ID that will be associated with the uploaded pictures.")
+    private int route;
+
+    @Option(names = {"--geo"}, description = "Conduct a geographic search within the given range (in meters).")
+    private double geographicSearchRadius;
+
+    @Option(names = {"--latitude"}, description = "Set latitude for the geographic search")
+    private double latitude;
+
+    @Option(names = {"--longitude"}, description = "Set longitude for the geographic search")
+    private double longitude;
+
+    @Option(names = {"--maxGeoResults"}, description = "Maximum number of results allowed from the geographical search. Defaults to 100")
+    private int maxGeoResults = 100;
 
     @Parameters(index = "0", paramLabel = "BUCKET", description = "Folder where the processed images are stored to process.")
     private String bucket;
@@ -61,7 +87,7 @@ public class MainCLI implements Callable<Void> {
 
         if (folderToUpload != null && folderToUpload.isDirectory()) {
             System.out.println("UPLOADING...");
-            bucketHandler = new ConcreteBucketHandler(bucket, StorageType.LOCAL);
+            bucketHandler = getBucketHandler();
             File[] files = folderToUpload.listFiles();
             Objects.requireNonNull(files, "File array was null");
             List<File> filesList = Arrays.asList(files);
@@ -72,17 +98,36 @@ public class MainCLI implements Callable<Void> {
                                             .collect(Collectors.toList());
 
             setProgressMonitoring(actualImages.size());
-
             actualImages.forEach(this::handleFile);
         } else if (save) {
             System.out.println("RETRIEVING PHOTOS...");
-            bucketHandler = new ConcreteBucketHandler(bucket, StorageType.LOCAL);
+            bucketHandler = getBucketHandler();
             setProgressMonitoring(ids.length);
-            bucketHandler.savePhotos(this::onDone, ids);
+            bucketHandler.downloadPhotos(this::onDone, ids);
+        } else if (delete) {
+            System.out.println("DELETING PHOTOS...");
+            bucketHandler = getBucketHandler();
+            setProgressMonitoring(ids.length);
+            bucketHandler.deletePhotos(this::onDone, ids);
+        } else if (deleteAll) {
+            System.out.println("DELETING ALL PHOTOS...");
+            bucketHandler = getBucketHandler();
+            setProgressMonitoring(1);
+            bucketHandler.deleteAll(this::onDone);
+        } else if (geographicSearchRadius != 0) {
+            System.out.println("GEOGRAPHIC SEARCH...");
+            bucketHandler = getBucketHandler();
+            PhotoSet set = bucketHandler.getPhotosAround(latitude, longitude, maxGeoResults);
+            setProgressMonitoring(set.getIds().size());
+            bucketHandler.downloadPhotoSet(this::onDone, set);
         }
 
         System.out.println("FINISHED!");
         return null;
+    }
+
+    private ConcreteBucketHandler getBucketHandler() {
+        return new ConcreteBucketHandler(bucket, StorageType.LOCAL);
     }
 
     private void handleFile(File file) {
@@ -90,7 +135,7 @@ public class MainCLI implements Callable<Void> {
             FileHolder upload = bucketHandler.newFileHolder(file);
             if (upload != null) {
                 setDefaultListeners(upload);
-                bucketHandler.upload(upload);
+                bucketHandler.upload(upload, route);
             }
         }
     }
@@ -121,6 +166,10 @@ public class MainCLI implements Callable<Void> {
         }
         System.out.println("DONE: " + fh.getKey());
         if (done == numberOfImagesToProcess) {
+
+            // TODO: 13/09/18 Make gpx saving work by using another callback
+//            if (saveAsGpx) bucketHandler.saveJustUploadedAsNewRoute(route);
+
             try {
                 bucketHandler.close();
             } catch (Exception e) {

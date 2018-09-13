@@ -33,14 +33,20 @@ public class LocalStorageConnection extends StorageConnection {
 
     @Nullable
     @Override
-    public File getFile(String key) {
+    public File getFile(String key) throws IOException {
         return new File(getDestination(false, key));
     }
 
     @Override
     public void copyFile() {
         String source = getSource();
-        String destination = getDestination(false);
+        String destination = null;
+        try {
+            destination = getDestination(false);
+        } catch (IOException e) {
+            fileHolder.onUploadFailure(e.toString());
+            return;
+        }
 
         File file = new File(destination);
         copy(source, destination, file);
@@ -49,12 +55,15 @@ public class LocalStorageConnection extends StorageConnection {
     @Override
     public void copyFileToOutput() {
         String source = getSource();
-        String destination = getDestination(true);
+        String destination = null;
+        try {
+            destination = getDestination(true);
+        } catch (IOException e) {
+            fileHolder.onUploadFailure(e.toString());
+            return;
+        }
 
-        System.out.println("SOURCE: " + source);
-        System.out.println("DESTINATION: " + destination);
-
-        if (source.contains(".json")){
+        if (source.contains(".json") && Log.debugging){
 
             try {
                 BufferedReader br = new BufferedReader(new FileReader(fileHolder.getFile()));
@@ -73,15 +82,18 @@ public class LocalStorageConnection extends StorageConnection {
         copy(source, destination, file);
     }
 
-    private String getDestination(boolean output) {
+    private String getDestination(boolean output) throws IOException {
         return getDestination(output, fileHolder.getKey());
     }
 
-    private String getDestination(boolean output, String key) {
+    private String getDestination(boolean output, String key) throws IOException {
         String bucket = Objects.requireNonNull(fileHolder.getBucket(), "Bucket was null");
         Objects.requireNonNull(key, "Key was null");
         Path destinationPath = null;
-        if (output) destinationPath = Paths.get(System.getProperty("user.home"), bucket, "output", key);
+        if (output) {
+            destinationPath = Paths.get(System.getProperty("user.home"), bucket, "output", key);
+            FileUtils.deleteDirectory(new File(destinationPath.toString()));
+        }
         else destinationPath = Paths.get(System.getProperty("user.home"), bucket, key);
         return destinationPath.toString();
     }
@@ -140,7 +152,12 @@ public class LocalStorageConnection extends StorageConnection {
     @Override
     public void removeFile() {
         Objects.requireNonNull(fileHolder.getFile(), "File was null");
-        String filePathString = getDestination(false);
+        String filePathString = null;
+        try {
+            filePathString = getDestination(false);
+        } catch (IOException e) {
+            fileHolder.onRemoveFailure(e.toString());
+        }
 
         File file = new File(filePathString);
         if (file.exists()) {
@@ -162,16 +179,18 @@ public class LocalStorageConnection extends StorageConnection {
 
         // FIXME: 06/08/18 Refactor to use the callbacks instead
 
-        if (!folder.exists()) return;
-        if ((!folder.isDirectory())) throw new AssertionError("File was not a directory");
-        if (folder.exists()) {
+        if (!folder.exists()) {
+            fileHolder.onRemoveFailure("Folder does not exist");
+        }
+        else if ((!folder.isDirectory())) {
+            fileHolder.onRemoveFailure("File was not a directory");
+        }
+        else if (folder.exists()) {
             FileUtils.deleteDirectory(folder);
-//            File[] files = folder.listFiles();
-//            Objects.requireNonNull(files, "List of files was null");
-//            for (File file : files) {
-//                if (file != null) file.delete();
-//            }
-        } else throw new AssertionError("File does not exist");
+            fileHolder.onRemoveSuccess();
+        } else {
+            fileHolder.onRemoveFailure("Remove failure - unknown reason");
+        }
 
     }
 

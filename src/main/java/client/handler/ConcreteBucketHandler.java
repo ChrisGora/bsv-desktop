@@ -207,18 +207,18 @@ public class ConcreteBucketHandler implements BucketHandler {
                     upload.onDbSuccess();
                 } else {
                     upload.onDbFailure("Database error - database returned: " + result);
-                    removeFromDatabase(upload);
+                    removeFromStorage(upload);
                 }
 
             } catch (SQLException e) {
                 e.printStackTrace();
                 upload.onDbFailure(e.toString());
-                removeFromDatabase(upload);
+                removeFromStorage(upload);
             }
         });
     }
 
-    private void removeFromDatabase(FileHolder upload) {
+    private void removeFromStorage(FileHolder upload) {
         upload.setRemoveCompletionListener((f) -> Log.w(TAG, "REMOVE Done: " + f.getKey()));
         upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
 
@@ -291,16 +291,13 @@ public class ConcreteBucketHandler implements BucketHandler {
     }
 
     @Override
-    public void savePhotos(CompletionObserver callback, String... ids) {
-
-        // TODO: 12/09/18 USE THE CALLBACKS!!!!!
-
+    public void downloadPhotos(CompletionObserver callback, String... ids) {
         int i = 1;
         for (String id : ids) {
             ImageMetadata metadata = null;
             try (DatabaseConnection db = new DatabaseConnection()) {
                 metadata = db.getMetadata(id);
-                copyToOutput(i, id, metadata, null);
+                copyToOutput(i, id, metadata, null, callback);
             } catch (SQLException | IOException e) {
                 e.printStackTrace();
             }
@@ -311,15 +308,41 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     @Override
     public void deletePhotos(CompletionObserver callback, String... ids) {
+        for (String id : ids) {
+            deleteFromStorage(id);
+            ImageMetadata metadata = null;
+            try (DatabaseConnection db = new DatabaseConnection()) {
+                metadata = db.getMetadata(id);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
 
+            Objects.requireNonNull(metadata, "No entry for the given id: " + id);
+
+            deleteFromSpatialDatabase(id, metadata.getLatitude(), metadata.getLongitude());
+            try {
+                deleteFromDatabase(id);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            notifyCompleted(callback, id);
+        }
+    }
+
+    private void notifyCompleted(CompletionObserver callback, String id) {
+        FileHolder emptyHolder = newEmptyFileHolder();
+        emptyHolder.setKey(id);
+        callback.onDone(emptyHolder);
     }
 
     @Override
-    public void deleteAll() {
+    public void deleteAll(CompletionObserver callback) {
         try (DatabaseConnection db = new DatabaseConnection()) {
             db.deleteAll(bucket);
             FileHolder bucketHolder = new FileHolder();
             bucketHolder.setBucket(bucket);
+            if (callback != null) bucketHolder.setRemoveCompletionListener(callback);
+            bucketHolder.setRemoveFailureListener((error) -> Log.e(TAG, error));
             StorageConnection storageConnection = getStorageConnection(bucketHolder);
             storageConnection.removeAll();
         } catch (SQLException | IOException e) {
@@ -330,19 +353,104 @@ public class ConcreteBucketHandler implements BucketHandler {
 // --------------------------------------------------------------------------------------------------------------------
 
     @Override
-    public void savePhotosAround(double latitude, double longitude, int maxResults) throws IOException {
+    public void downloadPhotoSet(CompletionObserver callback, PhotoSet set) throws IOException {
         int i = 1;
-        PhotoSet set = getPhotosAround(latitude, longitude, maxResults);
         for (String id : set.getIds()) {
             ImageMetadata metadata = set.getImages().get(id);
             Double distance = set.getDistances().get(id);
-            copyToOutput(i, id, metadata, distance);
+            copyToOutput(i, id, metadata, distance, callback);
             i++;
         }
     }
 
-    private void copyToOutput(int i, String id, ImageMetadata metadata, Double distance) throws IOException {
+    private void copyToOutput(int i, String id, ImageMetadata metadata, Double distance, CompletionObserver callback) throws IOException {
+        copyPhotoToOutput(i, id, null);
+
+        File tempFile = getTemporaryGsonFile(metadata, distance);
+        FileHolder outputHolder = newFileHolder(tempFile);
+
+        if (Log.debugging) {
+            printFileContents(outputHolder);
+        }
+
+        outputHolder.setBucket(bucket);
+        outputHolder.setKey(i + ".json");
+        if (callback != null) outputHolder.setUploadCompletionListener(callback);
+
+        StorageConnection storageConnection = getStorageConnection(outputHolder);
+        executor.submit(storageConnection::copyFileToOutput);
+    }
+
+    private void printFileContents(FileHolder outputHolder) throws IOException {
+        File file = outputHolder.getFile();
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            System.out.println(">>>>>>>>>>>>>>");
+            System.out.println(line);
+        }
+    }
+
+    private File getTemporaryGsonFile(ImageMetadata metadata, Double distance) throws IOException {
+        File tempFile = File.createTempFile("bsv", ".json");
+        tempFile.deleteOnExit();
+        PhotoResult photoInfo = new PhotoResult(metadata, distance);
+        Gson gson = new Gson();
+        try (Writer writer = new FileWriter(tempFile)) {
+            gson.toJson(photoInfo, writer);
+        }
+        return tempFile;
+    }
+
+    private void copyPhotoToOutput(int i, String id, CompletionObserver callback) {
+        StorageConnection storageConnection = buildStorageConnection(Optional.of(i), id, callback);
+        executor.submit(storageConnection::copyFileToOutput);
+    }
+
+    private void deleteFromStorage(String id) {
+        StorageConnection storageConnection = buildStorageConnection(Optional.empty(), id, null);
+        executor.submit(storageConnection::removeFile);
+    }
+
+    private StorageConnection buildStorageConnection(Optional<Integer> outputFileNumber, String id, CompletionObserver callback) {
         FileHolder outputHolder = newEmptyFileHolder();
+
+        String key = getKeyFromId(id);
+        StorageConnection storageConnection = getStorageConnection(outputHolder);
+        File file = getFileFromKey(key, storageConnection);
+
+        outputHolder.setFile(file);
+        String outputKey = outputFileNumber
+                .map(integer -> integer + key.substring(key.lastIndexOf('.')))
+                .orElse(key);
+        outputHolder.setKey(outputKey);
+
+        outputHolder.setUploadFailureListener((error) -> Log.e(TAG, error));
+        outputHolder.setRemoveFailureListener((error) -> Log.e(TAG, error));
+
+        if (callback != null) {
+            outputHolder.setUploadCompletionListener(callback);
+            outputHolder.setRemoveCompletionListener(callback);
+        }
+
+        return storageConnection;
+    }
+
+    private void deleteFromDatabase(String id) throws SQLException {
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            db.delete(id);
+        }
+    }
+
+    private void deleteFromSpatialDatabase(String id, double latitude, double longitude) {
+        spatialDatabaseConnection.delete(id, latitude, longitude);
+    }
+
+    private File getFileFromKey(String fileKey, StorageConnection storageConnection) {
+        return storageConnection.getFile(fileKey);
+    }
+
+    private String getKeyFromId(String id) {
         String fileKey = null;
         try (DatabaseConnection db = new DatabaseConnection()) {
             fileKey = db.getPath(id).getKey();
@@ -350,42 +458,7 @@ public class ConcreteBucketHandler implements BucketHandler {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        StorageConnection storageConnection = getStorageConnection(outputHolder);
-        outputHolder.setFile(storageConnection.getFile(fileKey));
-        outputHolder.setKey(i + fileKey.substring(fileKey.lastIndexOf('.')));
-        System.out.println(outputHolder.getFile());
-        System.out.println(outputHolder.getKey());
-
-        executor.submit(storageConnection::copyFileToOutput);
-
-        File tempFile = File.createTempFile("bsv", ".json");
-//            tempFile.deleteOnExit();
-
-        PhotoResult photoInfo = new PhotoResult(metadata, distance);
-
-        Gson gson = new Gson();
-
-        try (Writer writer = new FileWriter(tempFile)) {
-            gson.toJson(photoInfo, writer);
-        }
-
-        outputHolder = newFileHolder(tempFile);
-        File file = outputHolder.getFile();
-
-
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            System.out.println(">>>>>>>>>>>>>>");
-            System.out.println(line);
-        }
-
-        outputHolder.setBucket(bucket);
-        outputHolder.setKey(i + ".json");
-
-        storageConnection = getStorageConnection(outputHolder);
-        executor.submit(storageConnection::copyFileToOutput);
+        return fileKey;
     }
 
     @Nullable
@@ -489,6 +562,7 @@ public class ConcreteBucketHandler implements BucketHandler {
             FileHolder fileHolder = new FileHolder();
             fileHolder.setBucket(bucket);
             getStorageConnection(fileHolder).saveRTree(tree);
+            // FIXME: 13/09/18 RTREE NOT SAVED WHEN EXITING WITH CTRL C
         }
 
         private RTree<String, Geometry> getRTree() {
@@ -505,7 +579,12 @@ public class ConcreteBucketHandler implements BucketHandler {
             Log.v(TAG, "add: ADDING TO THE TREE");
             this.tree = tree.add(id, Geometries.point(latitude, longitude));
             Log.d(TAG, tree.asString());
+        }
 
+        synchronized void delete(String id, double latitude, double longitude) {
+            Log.v(TAG, "delete: DELETING FROM THE TREE");
+            tree = tree.delete(id, Geometries.point(latitude, longitude));
+            Log.d(TAG, tree.asString());
         }
 
         List<String> getUnsortedImageIds(double latitude, double longitude, double searchRadiusMeters) {

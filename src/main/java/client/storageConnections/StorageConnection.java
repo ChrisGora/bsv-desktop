@@ -88,7 +88,7 @@ public abstract class StorageConnection {
      * This new file should be based on the bucket and key supplied with the file holder
      */
     @Nullable
-    public abstract File getFile(String key);
+    public abstract File getFile(String key) throws IOException;
 
     // TODO: 30/08/18 Javadoc
     public abstract Optional<RTree<String, Geometry>> getRTree();
