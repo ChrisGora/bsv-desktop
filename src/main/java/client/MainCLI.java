@@ -30,12 +30,11 @@ public class MainCLI implements Callable<Void> {
     @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given folder.")
     private File folderToUpload;
 
-    // TODO: 13/09/18 Implement me
-    @Option(names = {"--saveAsGpxAfterUpload"}, description = "Collect all just uploaded files into a GPX file")
+    @Option(names = {"-g", "--saveAsGpxAfterUpload"}, description = "Collect all just uploaded files into a GPX file")
     private boolean saveAsGpxAfterUpload;
 
     // TODO: 13/09/18 Implement me
-    @Option(names = {"--saveRouteAsGpx"}, description = "Collect all entries with the specified route ID into a GPX file. A route ID must be specified with '-r'.")
+    @Option(names = {"-x", "--saveRouteAsGpx"}, description = "Collect all entries with the specified route ID into a GPX file. A route ID must be specified with '-r'.")
     private boolean saveRouteAsGpx;
 
     @Option(names = {"-s", "--save"}, description = "Save photos with the corresponding ids to the output directory.")
@@ -62,7 +61,7 @@ public class MainCLI implements Callable<Void> {
     @Option(names = {"--maxGeoResults"}, description = "Maximum number of results allowed from the geographical search. Defaults to 100")
     private int maxGeoResults = 100;
 
-    @Parameters(index = "0", paramLabel = "BUCKET", description = "Folder where the processed images are stored to process.")
+    @Parameters(index = "0", paramLabel = "BUCKET", description = "Folder where the processed images are or will be stored.")
     private String bucket;
 
     @Parameters(index = "1..*", paramLabel = "IDS", description = "IDs of files to process (what will be done depends on selected options).")
@@ -93,11 +92,15 @@ public class MainCLI implements Callable<Void> {
             List<File> filesList = Arrays.asList(files);
 
             List<File> actualImages = filesList
-                                            .stream()
-                                            .filter((file) -> file.getPath().contains("_E.jpg"))
-                                            .collect(Collectors.toList());
+                    .stream()
+                    .filter((file) -> file.getPath().contains("_E.jpg"))
+                    .collect(Collectors.toList());
 
-            setProgressMonitoring(actualImages.size());
+            if (saveAsGpxAfterUpload) {
+                setProgressMonitoring(actualImages.size() + 1);
+            } else {
+                setProgressMonitoring(actualImages.size());
+            }
             actualImages.forEach(this::handleFile);
         } else if (save) {
             System.out.println("RETRIEVING PHOTOS...");
@@ -116,12 +119,11 @@ public class MainCLI implements Callable<Void> {
             bucketHandler.deleteAll(this::onDone);
         } else if (geographicSearchRadius != 0) {
             System.out.println("GEOGRAPHIC SEARCH...");
-            bucketHandler = getBucketHandler();
+            bucketHandler = new ConcreteBucketHandler(bucket, StorageType.LOCAL, geographicSearchRadius);
             PhotoSet set = bucketHandler.getPhotosAround(latitude, longitude, maxGeoResults);
             setProgressMonitoring(set.getIds().size());
             bucketHandler.downloadPhotoSet(this::onDone, set);
         }
-
         System.out.println("FINISHED!");
         return null;
     }
@@ -159,17 +161,19 @@ public class MainCLI implements Callable<Void> {
     private synchronized void onDone(FileHolder fh) {
         pb.step();
         done++;
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+//        try {
+//            Thread.sleep(10);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
+        System.out.println(done + " DONE: " + fh.getKey());
+
+        if ((done == numberOfImagesToProcess - 1) && saveAsGpxAfterUpload) {
+            bucketHandler.saveJustUploadedAsNewRoute(this::onDone, route);
         }
-        System.out.println("DONE: " + fh.getKey());
+
         if (done == numberOfImagesToProcess) {
-
-            // TODO: 13/09/18 Make gpx saving work by using another callback
-//            if (saveAsGpx) bucketHandler.saveJustUploadedAsNewRoute(route);
-
             try {
                 bucketHandler.close();
             } catch (Exception e) {

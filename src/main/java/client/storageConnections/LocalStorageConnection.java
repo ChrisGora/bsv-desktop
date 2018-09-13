@@ -37,6 +37,10 @@ public class LocalStorageConnection extends StorageConnection {
         return new File(getDestination(false, key));
     }
 
+    public void clearOutput() throws IOException {
+        FileUtils.deleteDirectory(new File(getDestination(true, "NA")).getParentFile());
+    }
+
     @Override
     public void copyFile() {
         String source = getSource();
@@ -92,7 +96,6 @@ public class LocalStorageConnection extends StorageConnection {
         Path destinationPath = null;
         if (output) {
             destinationPath = Paths.get(System.getProperty("user.home"), bucket, "output", key);
-            FileUtils.deleteDirectory(new File(destinationPath.toString()));
         }
         else destinationPath = Paths.get(System.getProperty("user.home"), bucket, key);
         return destinationPath.toString();

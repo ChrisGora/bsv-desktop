@@ -96,6 +96,5 @@ public abstract class StorageConnection {
     // TODO: 30/08/18 Javadoc
     public abstract void saveRTree(RTree<String, Geometry> tree) throws IOException;
 
-    // TODO: 10/08/18 Decide on how a downloaded file should be returned
-//    File getFile();
+    public abstract void clearOutput() throws IOException;
 }

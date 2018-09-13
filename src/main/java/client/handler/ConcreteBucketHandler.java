@@ -35,8 +35,10 @@ import java.time.ZoneOffset;
 //import java.util.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manipulates a bucket storing the 360 photos and the associated database.
@@ -65,7 +67,7 @@ public class ConcreteBucketHandler implements BucketHandler {
     private List<FileHolder> doneUploads;
 
     public ConcreteBucketHandler(String bucket, StorageType type) {
-        this(bucket, type, 5000);
+        this(bucket, type, 500000000);
     }
 
     public ConcreteBucketHandler(String bucket, StorageType type, double searchRadiusMeters) {
@@ -74,8 +76,8 @@ public class ConcreteBucketHandler implements BucketHandler {
         this.searchRadiusMeters = searchRadiusMeters;
         this.spatialDatabaseConnection = new SpatialDatabaseConnection();
         // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
-//        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
-        this.executor = Executors.newWorkStealingPool(4);
+        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
+//        this.executor = Executors.newFixedThreadPool(8);
         this.doneUploads = new ArrayList<>();
     }
 
@@ -132,7 +134,7 @@ public class ConcreteBucketHandler implements BucketHandler {
         StorageConnection storageConnection = getStorageConnection(upload);
         executor.submit(storageConnection::copyFile);
         upload.setUploadCompletionListener(this::updateDatabase);
-        upload.setUploadCompletionListener(doneUploads::add);
+        upload.setDbUpdateCompletionListener(doneUploads::add);
     }
 
     private String getKey(FileHolder upload, String id) {
@@ -227,14 +229,14 @@ public class ConcreteBucketHandler implements BucketHandler {
     }
 
     @Override
-    public int saveJustUploadedAsNewRoute(int routeId) {
+    public int saveJustUploadedAsNewRoute(CompletionObserver callback, int routeId) {
         List<WayPoint> wayPoints = getWayPoints();
         GPX gpx = getGpx(wayPoints);
-        uploadGpx(routeId, gpx);
+        uploadGpx(callback, routeId, gpx);
         return wayPoints.size();
     }
 
-    private void uploadGpx(int routeId, GPX gpx) {
+    private void uploadGpx(CompletionObserver callback, int routeId, GPX gpx) {
         try {
             File tempFile = File.createTempFile("JPX" + routeId, ".gpx");
             tempFile.deleteOnExit();
@@ -250,7 +252,7 @@ public class ConcreteBucketHandler implements BucketHandler {
             });
 
             fileHolder.setUploadFailureListener((error) -> Log.e(TAG, "GPX file upload failure"));
-
+            if (callback != null) fileHolder.setUploadCompletionListener(callback);
             StorageConnection storageConnection = getStorageConnection(fileHolder);
             executor.submit(storageConnection::copyFile);
 
@@ -292,6 +294,13 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     @Override
     public void downloadPhotos(CompletionObserver callback, String... ids) {
+        try {
+            getStorageConnection(newEmptyFileHolder()).clearOutput();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
         int i = 1;
         for (String id : ids) {
             ImageMetadata metadata = null;
@@ -309,7 +318,12 @@ public class ConcreteBucketHandler implements BucketHandler {
     @Override
     public void deletePhotos(CompletionObserver callback, String... ids) {
         for (String id : ids) {
-            deleteFromStorage(id);
+            try {
+                deleteFromStorage(id);
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+                break;
+            }
             ImageMetadata metadata = null;
             try (DatabaseConnection db = new DatabaseConnection()) {
                 metadata = db.getMetadata(id);
@@ -354,6 +368,12 @@ public class ConcreteBucketHandler implements BucketHandler {
 
     @Override
     public void downloadPhotoSet(CompletionObserver callback, PhotoSet set) throws IOException {
+        try {
+            getStorageConnection(newEmptyFileHolder()).clearOutput();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
         int i = 1;
         for (String id : set.getIds()) {
             ImageMetadata metadata = set.getImages().get(id);
@@ -402,17 +422,17 @@ public class ConcreteBucketHandler implements BucketHandler {
         return tempFile;
     }
 
-    private void copyPhotoToOutput(int i, String id, CompletionObserver callback) {
+    private void copyPhotoToOutput(int i, String id, CompletionObserver callback) throws IOException {
         StorageConnection storageConnection = buildStorageConnection(Optional.of(i), id, callback);
         executor.submit(storageConnection::copyFileToOutput);
     }
 
-    private void deleteFromStorage(String id) {
+    private void deleteFromStorage(String id) throws IOException {
         StorageConnection storageConnection = buildStorageConnection(Optional.empty(), id, null);
         executor.submit(storageConnection::removeFile);
     }
 
-    private StorageConnection buildStorageConnection(Optional<Integer> outputFileNumber, String id, CompletionObserver callback) {
+    private StorageConnection buildStorageConnection(Optional<Integer> outputFileNumber, String id, CompletionObserver callback) throws IOException {
         FileHolder outputHolder = newEmptyFileHolder();
 
         String key = getKeyFromId(id);
@@ -446,7 +466,7 @@ public class ConcreteBucketHandler implements BucketHandler {
         spatialDatabaseConnection.delete(id, latitude, longitude);
     }
 
-    private File getFileFromKey(String fileKey, StorageConnection storageConnection) {
+    private File getFileFromKey(String fileKey, StorageConnection storageConnection) throws IOException {
         return storageConnection.getFile(fileKey);
     }
 
@@ -467,11 +487,10 @@ public class ConcreteBucketHandler implements BucketHandler {
         List<ImageMetadata> images = null;
         try {
             List<String> ids = spatialDatabaseConnection.getUnsortedImageIds(latitude, longitude, searchRadiusMeters, maxResults);
-            System.out.println(">>>>>>> UNSORTED IDS:");
-            System.out.println(ids.size());
-            System.out.println(ids);
+            Log.d(TAG, ">>>>>>> UNSORTED IDS:");
+            Log.d(TAG, "Size: " + ids.size());
+            Log.d(TAG, ids.toString());
             images = getListOfMetadata(ids);
-            System.out.println(images);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -598,6 +617,7 @@ public class ConcreteBucketHandler implements BucketHandler {
 
             searchResult.forEach((entry) -> ids.add(entry.value()));
 
+            System.out.println(ids.size());
             System.out.println(ids);
 
             if (Log.debugging) {
@@ -605,7 +625,7 @@ public class ConcreteBucketHandler implements BucketHandler {
                         .save("target/" + ids.size() + ".png");
             }
 
-            return ids;
+            return ids.subList(0, maxResults > ids.size() ? ids.size() : maxResults);
         }
 
         @Nullable

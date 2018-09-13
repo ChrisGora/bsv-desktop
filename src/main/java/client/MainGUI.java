@@ -135,7 +135,7 @@ public class MainGUI extends Application {
         GridPane.setConstraints(newRouteButton, col, row);
 
         newRouteButton.setText("Save as new route");
-        newRouteButton.setOnAction((event) -> bucketHandler.saveJustUploadedAsNewRoute(2));
+        newRouteButton.setOnAction((event) -> bucketHandler.saveJustUploadedAsNewRoute(null, 2));
         return newRouteButton;
     }
 

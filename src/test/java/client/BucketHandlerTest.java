@@ -30,9 +30,9 @@ public class BucketHandlerTest {
     public final TestName name = new TestName();
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         error = null;
-//        deleteAll();
+        deleteAll();
     }
 
     @BeforeClass
@@ -48,7 +48,7 @@ public class BucketHandlerTest {
     }
 
     private static void deleteAll() throws IOException {
-        final BucketHandler localBucketHandler = newTestUploader(StorageType.LOCAL);
+        BucketHandler localBucketHandler = newTestUploader(StorageType.LOCAL);
         localBucketHandler.deleteAll(null);
         localBucketHandler.close();
     }
@@ -99,7 +99,7 @@ public class BucketHandlerTest {
             }
 
             System.out.println(">>>>>>>>>>>>>>>>>>>>>> EXITED SYNCHRONISED");
-        };
+        }
 
 //        try {
 //            Thread.sleep(100000);
@@ -116,9 +116,10 @@ public class BucketHandlerTest {
         Assert.assertTrue("File doesn't exist", folder.exists());
 
         File[] files = folder.listFiles();
+        assertEquals("Incorrect number of files read in", 79 * 2, files.length);
 
         BucketHandler bucketHandler = newTestUploader();
-        bucketHandler.deleteAll(null);
+//        bucketHandler.deleteAll(null);
 
         for (File file : Objects.requireNonNull(files, "Files were null")) {
             if (file != null && file.getPath().contains("_E.jpg")) {
@@ -129,18 +130,20 @@ public class BucketHandlerTest {
 
                         CompletionObserver completionObserver = newSynchronizedCompletionObserver();
                         upload.setDbUpdateCompletionListener(completionObserver);
+                        upload.setDbFailureListener(this::onFailure);
 
                         bucketHandler.upload(upload);
 
                         synchronized (completionObserver) {
-                            completionObserver.wait(5000);
+                            completionObserver.wait(15000);
                         }
 
                     }
             }
         }
 
-        bucketHandler.saveJustUploadedAsNewRoute(1);
+        // Maybe this is the issue?
+        bucketHandler.saveJustUploadedAsNewRoute(null, 1);
         bucketHandler.close();
 
         if (error != null) fail(error);
@@ -238,11 +241,19 @@ public class BucketHandlerTest {
         }
         if (error != null) fail(error);
 
+        try (DatabaseConnection db = new DatabaseConnection()) {
+            List<ImageMetadata> images = db.getPhotosAround(51, 5, -2, 5);
+            assertEquals("Incorrect number of images in the database", 79, images.size());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         BucketHandler bucketHandler = newTestUploader();
         PhotoSet set = bucketHandler.getPhotosAround(51.45868, -2.60385, 100);
         bucketHandler.close();
         Objects.requireNonNull(set, "PhotoSet was null");
 
+        System.out.println(set.getIds());
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getIds().size());
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getDistances().size());
         Assert.assertEquals("Incorrect number of elements in the set", 79, set.getImages().size());

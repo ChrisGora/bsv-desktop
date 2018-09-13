@@ -14,6 +14,7 @@ import com.github.davidmoten.rtree.geometry.Geometry;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +46,11 @@ public class S3Connection extends StorageConnection {
         }
 
         this.fileHolder = fileHolder;
+    }
+
+    @Override
+    public void clearOutput() throws IOException {
+        throw new RuntimeException("Implement me");
     }
 
     @Override

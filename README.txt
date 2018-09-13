@@ -10,10 +10,6 @@ PROJECT SETUP:
 
         mvn -Dtest=ClientTests test
 
-4. Run the GUI client using:
-
-        mvn exec:java -D"exec.mainClass"="client.MainGUI"
-
 
 NOTES:
 
@@ -21,33 +17,56 @@ NOTES:
     The images and the metadata database will survive - however the internal spatial database (RTree) will get destroyed.
 
 
+GUI USAGE:
 
-RUNNING:
+1. Run the GUI client using. GUI offers limited upload and no download functionality.
+
+        mvn exec:java -D"exec.mainClass"="client.MainGUI"
+
+
+CLI USAGE:
 
 1. Create an executable JAR:
 
         mvn clean compile package
 
-2a. Run the java code directly:
+2. Run the java code directly:
 
         java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar  [+OPTIONS]
 
-2b. Run a mysql query and feed it into the java code:
+
+EXAMPLE: Running queries on the data:
 
 
-        EXAMPLE:
+        1) UPLOAD YOUR DATA
 
-        1) UPLOAD
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -r=2 -gu=/home/chris/Desktop/repos/db-client/src/main/resources/trip2 bsv
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -r=3 -gu=/home/chris/Desktop/repos/db-client/trips/trip3 bsv
 
-        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -evr=23 -u=/home/chris/Desktop/repos/db-client/trips/trip3 bristol-streetview-photos
 
+        OPTION A:
 
-        2) RUN A MYSQL QUERY
+        A1) RUN A MYSQL QUERY
 
         mysql -N -u java-db-client -p  < script.sql > out.txt
-        v1M4^qVAU!3084NF
+        Password:   v1M4^qVAU!3084NF
+
+        A2) DOWNLOAD RESULTS SELECTED BY THE QUERY
+
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -s bsv @out.txt
 
 
-        3) DOWNLOAD RESULTS SELECTED BY THE QUERY
+        OPTION B:
 
-        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -evs bristol-streetview-photos @out.txt
+        B1) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
+
+        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve --geo=20 --latitude=51.45723 --longitude=-2.60092 --maxGeoResults=40 bsv
+
+
+
+
+
+
+
+
+

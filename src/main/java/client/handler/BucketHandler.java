@@ -19,7 +19,7 @@ public interface BucketHandler extends Closeable {
 
     void upload(FileHolder upload, int routeNumber);
 
-    int saveJustUploadedAsNewRoute(int routeId);
+    int saveJustUploadedAsNewRoute(CompletionObserver callback, int routeId);
 
     PhotoSet getPhotosAround(double latitude, double longitude, int maxResults);
     void downloadPhotoSet(CompletionObserver callback, PhotoSet set) throws IOException;
