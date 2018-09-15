@@ -34,8 +34,8 @@ public class MainCLI implements Callable<Void> {
     private boolean saveAsGpxAfterUpload;
 
     // TODO: 13/09/18 Implement me
-    @Option(names = {"-x", "--saveRouteAsGpx"}, description = "Collect all entries with the specified route ID into a GPX file. A route ID must be specified with '-r'.")
-    private boolean saveRouteAsGpx;
+//    @Option(names = {"-x", "--saveRouteAsGpx"}, description = "Collect all entries with the specified route ID into a GPX file. A route ID must be specified with '-r'.")
+//    private boolean saveRouteAsGpx;
 
     @Option(names = {"-s", "--save"}, description = "Save photos with the corresponding ids to the output directory.")
     private boolean save;

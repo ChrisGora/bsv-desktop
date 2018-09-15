@@ -109,7 +109,7 @@ public class BucketHandlerTest {
     }
 
     @Test
-    public void trip2UploadTest() throws Exception {
+    public void trip2UploadTest() throws InterruptedException, IOException {
 
         ClassLoader classLoader = getClass().getClassLoader();
         File folder = new File(Objects.requireNonNull(classLoader.getResource("trip2")).getFile());
