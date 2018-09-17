@@ -16,19 +16,11 @@ PROJECT SETUP:
 
 NOTES:
 
-- NEVER have two clients / two instances of the Bucket Handler running concurrently on the same bucket.
+- NEVER have two clients running concurrently.
     The images and the metadata database will survive - however the internal spatial database (RTree) will get destroyed.
 
 // ---------------------------------------------------------------------------------------------------------------------
-GUI USAGE:
-// ---------------------------------------------------------------------------------------------------------------------
-
-1. Run the GUI client using. GUI offers limited upload and no download functionality.
-
-        mvn exec:java -D"exec.mainClass"="client.MainGUI"
-
-// ---------------------------------------------------------------------------------------------------------------------
-CLI USAGE:  (RECOMMENDED)
+CLI USAGE:
 // ---------------------------------------------------------------------------------------------------------------------
 
 1. Create an executable JAR:
@@ -41,39 +33,79 @@ CLI USAGE:  (RECOMMENDED)
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-EXAMPLE: Running queries on the data:
+EXAMPLE WORKFLOW: Running queries on the data:
 // ---------------------------------------------------------------------------------------------------------------------
 
         1) UPLOAD YOUR DATA
 
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -r=2 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip2 bsv
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -r=3 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip3 bsv
+            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -r=2 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip2 bsv
+            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -r=3 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip3 bsv
+            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -r=4 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip4 bsv
+
+            - Uploads (i.e. copies) the data from the specified directory into the bucket
+            - Make sure to keep track of and specify route numbers. If none are specified 0 will be used.
+
+        OPTION 1:
+
+            2.1A) RUN A MYSQL QUERY (SEE EXAMPLE QUERY: script.sql)
+
+                mysql -N -u java-db-client -p  < script.sql > out.txt
+                Password:
+                v1M4^qVAU!3084NF
+
+                - Runs script.sql
+                - It's a nested script
+                - First selects * from the table
+                - Then selects just the list of IDs for the client
+                - This list of IDs is saved in out.txt
+
+            2.1B) DOWNLOAD RESULTS SELECTED BY THE QUERY
+
+                java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -s bsv @out.txt
+
+                - out.txt must contain a list of image IDs and nothing else
+                - This command uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
 
 
-        OPTION A:
+        OPTION 2:
 
-        A1) RUN A MYSQL QUERY
+            2.2) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
 
-            mysql -N -u java-db-client -p  < script.sql > out.txt
-            Password:   v1M4^qVAU!3084NF
-
-
-        A2) DOWNLOAD RESULTS SELECTED BY THE QUERY
-
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -s bsv @out.txt
-
-
-        OPTION B:
-
-        B1) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
-
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve --geo=20 --latitude=51.45723 --longitude=-2.60092 --maxGeoResults=40 bsv
+                java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40 bsv
 
 
 
+        3) EXTRACT PROJECTIONS USING THE PYTHON SCRIPT
+
+            python src/main/python/equirectangular-toolbox/nfov.py /home/chris/bsv/output 0.45 800
+
+            - First argument is the directory to process
+            - Second is the FOV, recommended value is 0.45
+            - Third is the height of the image (Width = 2 * height)
 
 
 
+        4) BACKUP THE DATABASE AND THE RTREE
 
+            mysqldump -N -u root -p --databases bristol_streetview_schema > backup.sql
+            Password:
+            3Mc!^0aylO03L2!p
+
+            [INSERT RTREE BACKUP]
+
+        5) IF NEEDED, RESTORE THE BACKUPS
+
+            mysql -N -u root -p  < backup.sql
+            Password:
+            3Mc!^0aylO03L2!p
+
+            [INSERT RTREE RESTORE COMMAND]
+
+
+
+-- dump the file after each client exit
+-- read in the dump on every client run
+
+-- instructions for how to run the android app / the hardware
 
 

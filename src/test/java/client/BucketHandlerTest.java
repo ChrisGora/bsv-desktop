@@ -43,8 +43,8 @@ public class BucketHandlerTest {
     }
 
     @AfterClass
-    public static void tearDownClass() {
-//        deleteAll();
+    public static void tearDownClass() throws IOException {
+        deleteAll();
     }
 
     private static void deleteAll() throws IOException {

@@ -27,6 +27,9 @@ public class MainCLI implements Callable<Void> {
     @Option(names = {"-e", "--debug"}, description = "Debugging output.")
     private boolean debug = false;
 
+    @Option(names = {"-p", "--noPrintOuts"}, description = "No printed output. Just the progress bar.")
+    private boolean noPrintOuts = false;
+
     @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given folder.")
     private File folderToUpload;
 
@@ -82,7 +85,7 @@ public class MainCLI implements Callable<Void> {
 
         if (debug) Log.setDebugging();
         if (verbose) Log.setVerbose();
-
+        if (noPrintOuts) Log.disable();
 
         if (folderToUpload != null && folderToUpload.isDirectory()) {
             System.out.println("UPLOADING...");
