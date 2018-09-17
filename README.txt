@@ -47,13 +47,13 @@ EXAMPLE WORKFLOW: Running queries on the data:
 
         OPTION 1:
 
-            2.1A) RUN A MYSQL QUERY (SEE EXAMPLE QUERY: script.sql)
+            2.1A) RUN A MYSQL QUERY
 
                 mysql -N -u java-db-client -p  < script.sql > out.txt
                 Password:
                 v1M4^qVAU!3084NF
 
-                - Runs script.sql
+                - Runs script.sql (See contents for an example query)
                 - It's a nested script
                 - First selects * from the table
                 - Then selects just the list of IDs for the client
@@ -79,7 +79,7 @@ EXAMPLE WORKFLOW: Running queries on the data:
 
             python src/main/python/equirectangular-toolbox/nfov.py /home/chris/bsv/output 0.45 800
 
-            - First argument is the directory to process
+            - First argument is the directory to process - REPLACE WITH YOUR USERNAME!
             - Second is the FOV, recommended value is 0.45
             - Third is the height of the image (Width = 2 * height)
 
