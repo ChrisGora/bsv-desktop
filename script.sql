@@ -4,7 +4,7 @@ SELECT id FROM (
 
   SELECT * FROM Photo
   WHERE bucketName = "bsv"
-  AND routeId = 4
+  AND routeId = 2
   ORDER BY photoTimestamp
 
 ) a;

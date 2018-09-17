@@ -50,6 +50,7 @@ EXAMPLE WORKFLOW: Running queries on the data:
             2.1A) RUN A MYSQL QUERY
 
                 mysql -N -u java-db-client -p  < script.sql > out.txt
+
                 Password:
                 v1M4^qVAU!3084NF
 
@@ -66,6 +67,16 @@ EXAMPLE WORKFLOW: Running queries on the data:
                 - out.txt must contain a list of image IDs and nothing else
                 - This command uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
 
+
+            ALTERNATIVE: RUN BOTH IN ONE COMMAND
+
+                ./src/main/scripts/sql.sh
+
+                Password:
+                v1M4^qVAU!3084NF
+
+
+                (might need to run first: chmod 755 src/main/scripts/sql.sh)
 
         OPTION 2:
 
@@ -87,20 +98,26 @@ EXAMPLE WORKFLOW: Running queries on the data:
 
         4) BACKUP THE DATABASE AND THE RTREE
 
+            cp /home/chris/bsv/rtree.tree rtree_backup.tree
             mysqldump -N -u root -p --databases bristol_streetview_schema > backup.sql
+
             Password:
             3Mc!^0aylO03L2!p
 
-            [INSERT RTREE BACKUP]
 
         5) IF NEEDED, RESTORE THE BACKUPS
 
+            cp rtree_backup.tree /home/chris/bsv/rtree.tree
             mysql -N -u root -p  < backup.sql
+
             Password:
             3Mc!^0aylO03L2!p
 
             [INSERT RTREE RESTORE COMMAND]
 
+
+todo
+Create upload, sql and geoSearch scripts that include mysql and rtree backups
 
 
 -- dump the file after each client exit
