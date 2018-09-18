@@ -25,11 +25,18 @@ CLI USAGE:
 
 1. Create an executable JAR:
 
+AUTOMATIC:
+        ./src/main/scripts/build.sh ~/client
+
+MANUAL:
+        [NAVIGATE TO THE MAIN CLIENT FOLDER]
         mvn clean compile package
+        mkdir $HOME/client
+        cp target/client-1.0-SNAPSHOT-jar-with-dependencies.jar $HOME/client/client.jar
 
 2. Run the java code directly:
 
-        java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar  [+OPTIONS]
+        java -jar ~/client/client.jar  [+OPTIONS]
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -38,12 +45,24 @@ EXAMPLE WORKFLOW: Running queries on the data:
 
         1) UPLOAD YOUR DATA
 
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -r=2 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip2 bsv
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -r=3 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip3 bsv
-            java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -r=4 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip4 bsv
+        AUTOMATIC:
+            ./src/main/scripts/upload.sh
+
+        MANUAL:
+            cd /run/user/$UID/gvfs/mtp*/
+            cd Internal\ storage/Ricoh/
+            pwd
+            java -jar $HOME/client/client.jar -b=bsv -r=1 -gu="[PASTE THE RESULT OF PWD HERE]"
+
+            (e.g. java -jar $HOME/client/client.jar -b=bsv -r=1 -gu="/run/user/1000/gvfs/mtp:host=%5Busb%3A001%2C006%5D/Internal storage/Ricoh")
+
+
+            java -jar $HOME/client/client.jar -b=bsv -vepf=$HOME/client/log.txt -r=2 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip2
+            java -jar $HOME/client/client.jar -b=bsv -vepf=$HOME/client/log.txt -r=3 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip3
+            java -jar $HOME/client/client.jar -b=bsv -vepf=$HOME/client/log.txt -r=4 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip4
 
             - Uploads (i.e. copies) the data from the specified directory into the bucket
-            - Make sure to keep track of and specify route numbers. If none are specified 0 will be used.
+            - Make sure to keep track of route numbers. If none are specified 0 will be used.
 
         OPTION 1:
 
@@ -62,7 +81,7 @@ EXAMPLE WORKFLOW: Running queries on the data:
 
             2.1B) DOWNLOAD RESULTS SELECTED BY THE QUERY
 
-                java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve -s bsv @out.txt
+                java -jar $HOME/client/client.jar -b=bsv --vepf=$HOME/client/log.txt -s @out.txt
 
                 - out.txt must contain a list of image IDs and nothing else
                 - This command uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
@@ -76,13 +95,11 @@ EXAMPLE WORKFLOW: Running queries on the data:
                 v1M4^qVAU!3084NF
 
 
-                (might need to run first: chmod 755 src/main/scripts/sql.sh)
-
         OPTION 2:
 
             2.2) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
 
-                java -jar target/client-1.0-SNAPSHOT-jar-with-dependencies.jar -ve --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40 bsv
+                java -jar $HOME/client/client.jar -b=bsv --vepf=$HOME/client/log.txt --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40
 
 
 
@@ -124,5 +141,7 @@ Create upload, sql and geoSearch scripts that include mysql and rtree backups
 -- read in the dump on every client run
 
 -- instructions for how to run the android app / the hardware
+
+https://theta360.com/uk/support/manual/v/content/prepare/prepare_06.html
 
 

@@ -12,6 +12,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +22,10 @@ import java.util.stream.Collectors;
 @Command(mixinStandardHelpOptions = true, version = "BSV DB CLIENT 1.0")
 public class MainCLI implements Callable<Void> {
 
+    private static final String TAG = "MAIN";
+
+
+
     @Option(names = {"-v", "--verbose"}, description = "Verbose output.")
     private boolean verbose = false;
 
@@ -29,6 +34,9 @@ public class MainCLI implements Callable<Void> {
 
     @Option(names = {"-p", "--noPrintOuts"}, description = "No printed output. Just the progress bar.")
     private boolean noPrintOuts = false;
+
+    @Option(names = {"-f", "--logToFile"}, description = "Send the log output to the specified file.")
+    private String logToFile;
 
     @Option(names = {"-u", "--upload"}, description = "Upload 360 degree images from the given folder.")
     private File folderToUpload;
@@ -64,10 +72,10 @@ public class MainCLI implements Callable<Void> {
     @Option(names = {"--maxGeoResults"}, description = "Maximum number of results allowed from the geographical search. Defaults to 100")
     private int maxGeoResults = 100;
 
-    @Parameters(index = "0", paramLabel = "BUCKET", description = "Folder where the processed images are or will be stored.")
+    @Option(names = {"-b", "--bucket"}, description = "Folder where the processed images are or will be stored.")
     private String bucket;
 
-    @Parameters(index = "1..*", paramLabel = "IDS", description = "IDs of files to process (what will be done depends on selected options).")
+    @Parameters(index = "0..*", paramLabel = "IDS", description = "IDs of files to process (what will be done depends on selected options).")
     private String[] ids;
 
     private BucketHandler bucketHandler;
@@ -81,14 +89,23 @@ public class MainCLI implements Callable<Void> {
     }
 
     @Override
-    public Void call() throws Exception {
+    public Void call() throws IOException {
 
         if (debug) Log.setDebugging();
         if (verbose) Log.setVerbose();
         if (noPrintOuts) Log.disable();
+        if (logToFile != null) {
+            try {
+                String path = new File(logToFile).getAbsolutePath();
+                System.out.println(path);
+                Log.logToFile(path);
+            } catch (IOException e) {
+                Log.stopLoggingToFile();
+            }
+        }
 
         if (folderToUpload != null && folderToUpload.isDirectory()) {
-            System.out.println("UPLOADING...");
+            System.out.println("UPLOADING FROM " + folderToUpload.getAbsolutePath());
             bucketHandler = getBucketHandler();
             File[] files = folderToUpload.listFiles();
             Objects.requireNonNull(files, "File array was null");
@@ -147,13 +164,13 @@ public class MainCLI implements Callable<Void> {
 
     private void setDefaultListeners(FileHolder upload) {
 //        upload.setUploadCompletionListener(this::onDone);
-        upload.setUploadFailureListener(System.err::println);
+        upload.setUploadFailureListener((error) -> Log.e(TAG, error));
 //
         upload.setDbUpdateCompletionListener(this::onDone);
-        upload.setDbFailureListener(System.err::println);
+        upload.setDbFailureListener((error) -> Log.e(TAG, error));
 //
-        upload.setRemoveCompletionListener(System.out::println);
-        upload.setRemoveFailureListener(System.err::println);
+        upload.setRemoveCompletionListener((error) -> Log.w(TAG, error.getKey()));
+        upload.setRemoveFailureListener((error) -> Log.e(TAG, error));
     }
 
     private void setProgressMonitoring(int n) {
@@ -170,7 +187,7 @@ public class MainCLI implements Callable<Void> {
 //            e.printStackTrace();
 //        }
 
-        System.out.println(done + " DONE: " + fh.getKey());
+        Log.i(TAG, done + " DONE: " + fh.getKey());
 
         if ((done == numberOfImagesToProcess - 1) && saveAsGpxAfterUpload) {
             bucketHandler.saveJustUploadedAsNewRoute(this::onDone, route);
@@ -183,6 +200,7 @@ public class MainCLI implements Callable<Void> {
                 e.printStackTrace();
             } finally {
                 pb.close();
+                Log.close();
             }
         }
     }

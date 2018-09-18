@@ -122,6 +122,7 @@ public class MainGUI extends Application {
             if (files != null) {
                 files.forEach(file -> {
                     if (file.getPath().contains("_E.jpg")) {
+                        System.out.println(file.getAbsolutePath());
                         handleFile(primaryStage, file);
                     }
                 });
