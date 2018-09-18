@@ -49,7 +49,17 @@ public class ImageMetadata {
     private int routeNumber;
 
 
-    public ImageMetadata(String id, int height, int width, LocalDateTime photoDateTime, double latitude, double longitude, String serialNumber, int routeNumber) {
+    public ImageMetadata(String id,
+                         int height,
+                         int width,
+                         LocalDateTime photoDateTime,
+                         double latitude,
+                         double longitude,
+                         String serialNumber,
+                         int routeNumber,
+                         double bearing,
+                         double bearingAccuracy,
+                         double locationAccuracy) {
         this.id = id;
         this.height = height;
         this.width = width;
@@ -58,6 +68,9 @@ public class ImageMetadata {
         this.longitude = longitude;
         this.serialNumber = serialNumber;
         this.routeNumber = routeNumber;
+        this.bearing = bearing;
+        this.locationAccuracy = locationAccuracy;
+        this.bearingAccuracy = bearingAccuracy;
         // TODO: 10/09/18 Include loc acc / bearing / bearing acc in the constructor
     }
 

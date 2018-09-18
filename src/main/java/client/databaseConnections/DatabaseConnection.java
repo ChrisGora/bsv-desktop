@@ -168,7 +168,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     public ImageMetadata getMetadata(String id) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE id = ? ";
 
         ImageMetadata metadata;
@@ -211,7 +211,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     public List<ImageMetadata> getPhotosTakenAt(double latitude, double longitude) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE latitude = ? " +
                 "AND longitude = ?;";
 
@@ -243,13 +243,16 @@ public class DatabaseConnection implements AutoCloseable {
                 results.getDouble("latitude"),
                 results.getDouble("longitude"),
                 results.getString("cameraSerialNumber"),
-                results.getInt("routeId")
+                results.getInt("routeId"),
+                results.getDouble("bearing"),
+                results.getDouble("bearingAccuracy"),
+                results.getDouble("locationAccuracy")
         );
     }
 
     @Deprecated
     public List<ImageMetadata> getPhotosTakenOn(LocalDateTime dateTime) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE photoTimestamp = ?;";
 
         List<ImageMetadata> images = new ArrayList<>();
@@ -277,7 +280,7 @@ public class DatabaseConnection implements AutoCloseable {
     // FIXME: 12/09/18 They don't take buckets into account!!!!! Returned ids will have come from the entire DB!!!
     @Deprecated
     public List<ImageMetadata> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE uploadTimestamp = ?;";
 
         List<ImageMetadata> images = new ArrayList<>();
@@ -292,7 +295,7 @@ public class DatabaseConnection implements AutoCloseable {
 
     @Deprecated
     private List<ImageMetadata> getPhotosBetween(LocalDateTime date1, LocalDateTime date2, String where) throws SQLException {
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE " + where + " BETWEEN ? AND ?;";
         List<ImageMetadata> images = new ArrayList<>();
         executeSqlWithTwoDates(sql, date1, date2, images);
@@ -342,7 +345,7 @@ public class DatabaseConnection implements AutoCloseable {
                                                double longitudeDelta
     ) throws SQLException {
 
-        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId FROM Photo " +
+        String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE latitude BETWEEN ? AND ? " +
                 "AND longitude BETWEEN ? AND ?;";
 
