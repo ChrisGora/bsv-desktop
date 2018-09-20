@@ -71,7 +71,6 @@ public class ImageMetadata {
         this.bearing = bearing;
         this.locationAccuracy = locationAccuracy;
         this.bearingAccuracy = bearingAccuracy;
-        // TODO: 10/09/18 Include loc acc / bearing / bearing acc in the constructor
     }
 
     public ImageMetadata(File image, File jsonInfo, int routeNumber) throws IOException, MetadataException, ImageProcessingException, ImageReadException {
