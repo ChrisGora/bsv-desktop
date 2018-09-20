@@ -23,7 +23,7 @@ public class DatabaseConnection implements AutoCloseable {
     private static final int PORT = 3306;
     private static final String JDBC_URL = "jdbc:mysql://" + HOSTNAME + ":" + PORT + "/bristol_streetview_schema";
     private static final String USERNAME = "java-db-client";
-    private static final String PASSWORD = "v1M4^qVAU!3084NF"; // FIXME: 17/07/18 Password as plaintext!
+    private static final String PASSWORD = "Re278nErRowD";
 
     private static final String KEY_STORE_TYPE = "JKS";
     private static final String KEY_STORE_PROVIDER = "SUN";
@@ -251,6 +251,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     @Deprecated
+    @VisibleForTesting
     public List<ImageMetadata> getPhotosTakenOn(LocalDateTime dateTime) throws SQLException {
         String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE photoTimestamp = ?;";
@@ -261,6 +262,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     @Deprecated
+    @VisibleForTesting
     private void executeSqlWithOneDate(String sql, LocalDateTime dateTime, List<ImageMetadata> images) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setTimestamp(1, Timestamp.valueOf(dateTime));
@@ -277,8 +279,8 @@ public class DatabaseConnection implements AutoCloseable {
         }
     }
 
-    // FIXME: 12/09/18 They don't take buckets into account!!!!! Returned ids will have come from the entire DB!!!
     @Deprecated
+    @VisibleForTesting
     public List<ImageMetadata> getPhotosUploadedOn(LocalDateTime dateTime) throws SQLException {
         String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE uploadTimestamp = ?;";
@@ -289,11 +291,13 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     @Deprecated
+    @VisibleForTesting
     public List<ImageMetadata> getPhotosTakenBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
         return getPhotosBetween(date1, date2, "photoTimestamp");
     }
 
     @Deprecated
+    @VisibleForTesting
     private List<ImageMetadata> getPhotosBetween(LocalDateTime date1, LocalDateTime date2, String where) throws SQLException {
         String sql = "SELECT id, height, width, photoTimestamp, latitude, longitude, cameraSerialNumber, routeId, bearing, bearingAccuracy, locationAccuracy FROM Photo " +
                 "WHERE " + where + " BETWEEN ? AND ?;";
@@ -303,6 +307,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     @Deprecated
+    @VisibleForTesting
     private void executeSqlWithTwoDates(String sql, LocalDateTime dateTime1, LocalDateTime dateTime2, List<ImageMetadata> images) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
 //            statement.set(1, where);
@@ -322,6 +327,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     @Deprecated
+    @VisibleForTesting
     public List<ImageMetadata> getPhotosUploadedBetween(LocalDateTime date1, LocalDateTime date2) throws SQLException {
         return getPhotosBetween(date1, date2, "uploadTimestamp");
     }
@@ -339,6 +345,7 @@ public class DatabaseConnection implements AutoCloseable {
     }
 
     @Deprecated
+    @VisibleForTesting
     public List<ImageMetadata> getPhotosAround(double latitude,
                                                double latitudeDelta,
                                                double longitude,

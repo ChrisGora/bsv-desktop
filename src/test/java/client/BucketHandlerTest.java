@@ -61,13 +61,6 @@ public class BucketHandlerTest {
         return new ConcreteBucketHandler("bristol-streetview-photos", type);
     }
 
-//    @Test
-//    public void amazonSimpleUploadTest() throws InterruptedException {
-//        simpleUploadTest(StorageType.AMAZON);
-//        if (error != null) fail(error);
-//        System.out.println(name.getMethodName() + ": PASSED");
-//    }
-
     @Test
     public void localSimpleUploadTest() throws InterruptedException, IOException {
         simpleUploadTest(StorageType.LOCAL);
@@ -100,14 +93,9 @@ public class BucketHandlerTest {
 
             System.out.println(">>>>>>>>>>>>>>>>>>>>>> EXITED SYNCHRONISED");
         }
-
-//        try {
-//            Thread.sleep(100000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
     }
 
+//    @Ignore("Ignored to avoid getting trip 2 files")
     @Test
     public void trip2UploadTest() throws InterruptedException, IOException {
 
@@ -222,9 +210,7 @@ public class BucketHandlerTest {
 
     }
 
-    // TODO: 06/08/18 test that file gets removed when db rejects it
-
-
+//    @Ignore("Ignored to avoid getting trip 2 files")
     @Test
     public void getPhotoTest() throws InterruptedException, IOException {
 
@@ -285,6 +271,7 @@ public class BucketHandlerTest {
         System.out.println(name.getMethodName() + ": PASSED");
     }
 
+//    @Ignore("Ignored to avoid getting trip 2 files")
     @Test
     public void saveImagesTest() throws Exception {
         trip2UploadTest();

@@ -75,9 +75,8 @@ public class ConcreteBucketHandler implements BucketHandler {
         this.bucket = bucket;
         this.searchRadiusMeters = searchRadiusMeters;
         this.spatialDatabaseConnection = new SpatialDatabaseConnection();
-        // FIXME: 09/08/18 Remove the debugging executor and use standard executor for real life
-//        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
-        this.executor = Executors.newFixedThreadPool(8);
+        this.executor = new DebuggingExecutor(2, 2, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000));
+//        this.executor = Executors.newFixedThreadPool(8);
         this.doneUploads = new ArrayList<>();
     }
 

@@ -1,147 +1,152 @@
 BSV DB CLIENT 1.0
 
+
+CONTENTS:
+1. PROJECT SETUP
+2. COMPILING AND USAGE
+3. RESTORING EXISTING DATABASES
+4. UPLOADING YOUR DATA
+5. RUNNING SQL QUERIES
+6. RUNNING GEOGRAPHIC QUERIES
+7. BACKING UP THE DATABASES
+
+TERMINOLOGY:
+
+BUCKET - Directory where photos will be stored. The bucket will be stored in your home folder:
+            $HOME/[BUCKET NAME]
+
+RTREE - Database for multi-dimensional (here geographical) data
+
+
 // ---------------------------------------------------------------------------------------------------------------------
 PROJECT SETUP:
 // ---------------------------------------------------------------------------------------------------------------------
 
-1. Install mysql 5.7 (e.g. using Ubuntu APT)
+1. Make sure trip 2 photos are copied to: db-client/src/test/resources/trip2
+        Tests will fail without these photos
 
-2. Execute:
+        (Alternatively uncomment @Ignore annotation on lines 111, 229, 290 of BucketHandlerTest)
+
+
+2. Install mysql 5.7 (e.g. using Ubuntu APT)
+
+3. Execute:
 
         sudo mysql -u root < init.sql
 
-3. Verify the installation by running all client tests:
+4. Verify the installation by running all client tests:
 
         mvn -Dtest=ClientTests test
 
+
 NOTES:
+
+- If you see this message:
+    "getPhotoTest(client.BucketHandlerTest): Incorrect number of images in the database expected:<79> but was:<78>"
+  Simply re-run the tests
+
+- Tests might fail if you already uploaded any own data.
+
+- Tests manipulate buckets and the databases.
+
+- Therefore DO NOT RUN TESTS WHEN YOU ALREADY HAVE UPLOADED OWN DATA!
 
 - NEVER have two clients running concurrently.
     The images and the metadata database will survive - however the internal spatial database (RTree) will get destroyed.
 
+
 // ---------------------------------------------------------------------------------------------------------------------
-CLI USAGE:
+COMPILING AND USAGE:
 // ---------------------------------------------------------------------------------------------------------------------
 
 1. Create an executable JAR:
 
-AUTOMATIC:
-        ./src/main/scripts/build.sh ~/client
+        ./src/main/scripts/build.sh [INSTALL DIRECTORY]
 
-MANUAL:
-        [NAVIGATE TO THE MAIN CLIENT FOLDER]
-        mvn clean compile package
-        mkdir $HOME/client
-        cp target/client-1.0-SNAPSHOT-jar-with-dependencies.jar $HOME/client/client.jar
+        RECOMMENDED:
+            ./src/main/scripts/build.sh ~/client
 
 2. Run the java code directly:
 
-        java -jar ~/client/client.jar  [+OPTIONS]
+        cd ~/client
+        java -jar client.jar  [+OPTIONS]
+
+        For help and available commands:
+        java -jar client.jar -h
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-EXAMPLE WORKFLOW: Running queries on the data:
+RESTORING EXISTING DATABASES
 // ---------------------------------------------------------------------------------------------------------------------
 
-        1) UPLOAD YOUR DATA
+        ./restore.sql [BUCKET]
 
-        AUTOMATIC:
-            ./src/main/scripts/upload.sh
+            - This script will look for the files:
+                rtree_backup.tree
+                backup.sql
+             in: [INSTALL DIRECTORY]/[BUCKET]
 
-        MANUAL:
-            cd /run/user/$UID/gvfs/mtp*/
-            cd Internal\ storage/Ricoh/
-            pwd
-            java -jar $HOME/client/client.jar -b=bsv -r=1 -gu="[PASTE THE RESULT OF PWD HERE]"
+            - This operation deletes any data there might already be in the databases
 
-            (e.g. java -jar $HOME/client/client.jar -b=bsv -r=1 -gu="/run/user/1000/gvfs/mtp:host=%5Busb%3A001%2C006%5D/Internal storage/Ricoh")
+// ---------------------------------------------------------------------------------------------------------------------
+UPLOADING YOUR DATA
+// ---------------------------------------------------------------------------------------------------------------------
 
+        ./upload.sh [BUCKET] [ROUTE NUMBER]
 
-            java -jar $HOME/client/client.jar -b=bsv -vepf=$HOME/client/log.txt -r=2 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip2
-            java -jar $HOME/client/client.jar -b=bsv -vepf=$HOME/client/log.txt -r=3 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip3
-            java -jar $HOME/client/client.jar -b=bsv -vepf=$HOME/client/log.txt -r=4 -gu=/home/chris/Desktop/repos/db-client/src/test/resources/trip4
+            - The script attempts to find connected MTP devices (i.e. Android phones) and looks for the Ricoh directory
+            - If found, the contents are uploaded to the DB
+            - An automatic backup is created before upload is started
+            - If the upload fails, or the client is forced to close, make sure you restore the backup
+            - Don't forget to delete the files from the phone (only after a successful upload!)
 
-            - Uploads (i.e. copies) the data from the specified directory into the bucket
-            - Make sure to keep track of route numbers. If none are specified 0 will be used.
+        To upload the test trips:
 
-        OPTION 1:
+            java -jar client.jar -b=bsv -vepf=$HOME/client/log.txt -r=2 -gu=[PATH TO RESOURCES]/trip2
+            java -jar client.jar -b=bsv -vepf=$HOME/client/log.txt -r=3 -gu=[PATH TO RESOURCES]/trip3
+            java -jar client.jar -b=bsv -vepf=$HOME/client/log.txt -r=4 -gu=[PATH TO RESOURCES]/trip4
 
-            2.1A) RUN A MYSQL QUERY
+// ---------------------------------------------------------------------------------------------------------------------
+RUNNING SQL QUERIES
+// ---------------------------------------------------------------------------------------------------------------------
 
-                mysql -N -u java-db-client -p  < script.sql > out.txt
+        ./sql.sh [BUCKET]
 
-                Password:
-                v1M4^qVAU!3084NF
+                - Runs script.sql (See its content for an example query)
+                - It's a nested script in the form:
+                        SELECT id FROM (   [YOUR ACTUAL QUERY...]   ) a;
 
-                - Runs script.sql (See contents for an example query)
-                - It's a nested script
-                - First selects * from the table
-                - Then selects just the list of IDs for the client
-                - This list of IDs is saved in out.txt
-
-            2.1B) DOWNLOAD RESULTS SELECTED BY THE QUERY
-
-                java -jar $HOME/client/client.jar -b=bsv --vepf=$HOME/client/log.txt -s @out.txt
-
-                - out.txt must contain a list of image IDs and nothing else
-                - This command uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
+                - This script uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
 
 
-            ALTERNATIVE: RUN BOTH IN ONE COMMAND
+// ---------------------------------------------------------------------------------------------------------------------
+RUNNING GEOGRAPHIC QUERIES
+// ---------------------------------------------------------------------------------------------------------------------
 
-                ./src/main/scripts/sql.sh
+1) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
 
-                Password:
-                v1M4^qVAU!3084NF
+        java client.jar -b=bsv --vepf=$HOME/client/log.txt --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40
 
+2) EXTRACT PROJECTIONS USING THE PYTHON SCRIPT
 
-        OPTION 2:
+        python nfov.py $HOME/bsv/output 0.45 800
 
-            2.2) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
+                - First argument is the directory to process - REPLACE WITH YOUR BUCKET NAME
+                - Second is the FOV, recommended value is 0.45
+                - Third is the height of the image (width = 2 * height)
 
-                java -jar $HOME/client/client.jar -b=bsv --vepf=$HOME/client/log.txt --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40
+// ---------------------------------------------------------------------------------------------------------------------
+BACKING UP THE DATABASES
+// ---------------------------------------------------------------------------------------------------------------------
 
+        ./backup.sh [BUCKET]
 
-
-        3) EXTRACT PROJECTIONS USING THE PYTHON SCRIPT
-
-            python src/main/python/equirectangular-toolbox/nfov.py /home/chris/bsv/output 0.45 800
-
-            - First argument is the directory to process - REPLACE WITH YOUR USERNAME!
-            - Second is the FOV, recommended value is 0.45
-            - Third is the height of the image (Width = 2 * height)
-
-
-
-        4) BACKUP THE DATABASE AND THE RTREE
-
-            cp /home/chris/bsv/rtree.tree rtree_backup.tree
-            mysqldump -N -u root -p --databases bristol_streetview_schema > backup.sql
-
-            Password:
-            3Mc!^0aylO03L2!p
+            - This script creates the files:
+                rtree_backup.tree
+                backup.sql
+             in: [INSTALL DIRECTORY]/[BUCKET]
 
 
-        5) IF NEEDED, RESTORE THE BACKUPS
 
-            cp rtree_backup.tree /home/chris/bsv/rtree.tree
-            mysql -N -u root -p  < backup.sql
-
-            Password:
-            3Mc!^0aylO03L2!p
-
-            [INSERT RTREE RESTORE COMMAND]
-
-
-todo
-Create upload, sql and geoSearch scripts that include mysql and rtree backups
-
-
--- dump the file after each client exit
--- read in the dump on every client run
-
--- instructions for how to run the android app / the hardware
-
-https://theta360.com/uk/support/manual/v/content/prepare/prepare_06.html
 
 

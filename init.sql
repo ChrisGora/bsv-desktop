@@ -1,11 +1,11 @@
 
 USE mysql;
 UPDATE user SET plugin='mysql_native_password' WHERE User='root';
-ALTER USER 'root'@'localhost' IDENTIFIED BY '3Mc!^0aylO03L2!p';
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'Cy3M22Yar2UJ';
 FLUSH PRIVILEGES;
 
 USE mysql;
-CREATE USER 'java-db-client'@'localhost' IDENTIFIED BY 'v1M4^qVAU!3084NF';
+CREATE USER 'java-db-client'@'localhost' IDENTIFIED BY 'Re278nErRowD';
 GRANT ALL PRIVILEGES ON *.* TO 'java-db-client'@'localhost';
 FLUSH PRIVILEGES;
 
