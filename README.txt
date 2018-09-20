@@ -112,22 +112,22 @@ RUNNING SQL QUERIES
 
         ./sql.sh [BUCKET]
 
-                - Runs script.sql (See its content for an example query)
+                - This script uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
+                - It runs script.sql (See its content for an example query)
                 - It's a nested script in the form:
                         SELECT id FROM (   [YOUR ACTUAL QUERY...]   ) a;
 
-                - This script uses the '@' sign - it means that contents of the out.txt file are attached to the end of the command
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 RUNNING GEOGRAPHIC QUERIES
 // ---------------------------------------------------------------------------------------------------------------------
 
-1) RUN A GEOGRAPHIC QUERY DIRECTLY ON THE CLIENT
+1) Run a geographic query directly on the client
 
-        java client.jar -b=bsv --vepf=$HOME/client/log.txt --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40
+        java -jar client.jar -b=bsv --vepf=$HOME/client/log.txt --geo=20 --latitude=51.45722 --longitude=-2.6009 --maxGeoResults=40
 
-2) EXTRACT PROJECTIONS USING THE PYTHON SCRIPT
+2) Extract projections
 
         python nfov.py $HOME/bsv/output 0.45 800
 
