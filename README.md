@@ -1,4 +1,4 @@
-# BRISTOL STREET DESKTOP CLIENT 1.0
+# BRISTOL STREET VIEW DESKTOP CLIENT 1.0
 
 This is the second part of work that I did for my Summer 2018 Internship at the University of Bristol's Visual Information Lab. The main aim of the project was to create a platform to collect and store 1000s of 360 degree images of Bristol.
 
