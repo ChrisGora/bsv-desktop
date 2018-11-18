@@ -29,9 +29,10 @@ For the first part of the project, have a look at the" Bristol Street View Andro
 ### PROJECT SETUP:
 
 1. Make sure trip 2 photos are copied to: db-client/src/test/resources/trip2
-        Tests will fail without these photos
 
-        (Alternatively uncomment @Ignore annotation on lines 111, 229, 290 of BucketHandlerTest)
+Tests will fail without these photos
+
+(Alternatively uncomment @Ignore annotation on lines 111, 229, 290 of BucketHandlerTest)
 
 
 2. Install mysql 5.7 (e.g. using Ubuntu APT)
@@ -63,18 +64,19 @@ For the first part of the project, have a look at the" Bristol Street View Andro
 
 1. Create an executable JAR:
 
-        `./src/main/scripts/build.sh [INSTALL DIRECTORY]`
+`./src/main/scripts/build.sh [INSTALL DIRECTORY]`
 
-        RECOMMENDED:
-            `./src/main/scripts/build.sh ~/client`
+RECOMMENDED:
+
+`./src/main/scripts/build.sh ~/client`
 
 2. Run the java code directly:
 
-        `cd ~/client`
-        `java -jar client.jar  [+OPTIONS]`
+        cd ~/client
+        java -jar client.jar  [+OPTIONS]
 
-        `For help and available commands:`
-        `java -jar client.jar -h`
+        For help and available commands:
+        java -jar client.jar -h
 
 
 ### RESTORING EXISTING DATABASES
@@ -136,8 +138,10 @@ To upload the test trips:
         ./backup.sh [BUCKET]
 
 This script creates the files:
+
 * rtree_backup.tree
 * backup.sql
+
 in: `INSTALL DIRECTORY/BUCKET`
 
 
