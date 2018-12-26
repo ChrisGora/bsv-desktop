@@ -1,4 +1,4 @@
-# BRISTOL STREET VIEW DESKTOP CLIENT 1.0
+# Bristol Street View Desktop Client
 
 This is the second part of work that I did for my Summer 2018 Internship at the University of Bristol's Visual Information Lab. The main aim of the project was to create a platform to collect and store 1000s of 360 degree images of Bristol.
 
@@ -9,16 +9,16 @@ The repository contains a Java desktop client. It process photos taken during a 
 For the first part of the project, have a look at the" Bristol Street View Android App" repo.
 
 
-## CONTENTS:
-1. PROJECT SETUP
-2. COMPILING AND USAGE
-3. RESTORING EXISTING DATABASES
-4. UPLOADING YOUR DATA
-5. RUNNING SQL QUERIES
-6. RUNNING GEOGRAPHIC QUERIES
-7. BACKING UP THE DATABASES
+## Contents:
+1. Project Setup
+2. Compiling and Usage
+3. Restoring Existing Databases
+4. Uploading Your Data
+5. Running SQL Queries
+6. Running Geographic Queries
+7. Backing Up The Data
 
-## TERMINOLOGY:
+## Terminology:
 
 `BUCKET` - Directory where photos will be stored. The bucket will be stored in your home folder:
             `$HOME/[BUCKET NAME]`
